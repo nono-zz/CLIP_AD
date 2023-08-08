@@ -1,0 +1,3 @@
+2023-07-18 00:17:27.026 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/carpet
+2023-07-18 00:17:27.030 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: carpet/117, batch size: 128
+2023-07-18 00:17:34.878 | INFO     | test:test:26 - begin build text feature gallery...

@@ -1,0 +1,64 @@
+2023-07-17 00:15:22.199 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/bottle
+2023-07-17 00:15:22.201 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: bottle/83, batch size: 128
+2023-07-17 00:15:24.747 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-17 00:15:25.032 | INFO     | test:test:28 - build text feature gallery finished.
+2023-07-17 00:15:39.867 | INFO     | __main__:run_winclip:42 - bottle=======i_roc: 98.97
+2023-07-17 00:15:39.868 | INFO     | __main__:run_winclip:42 - bottle=======p_roc: 89.99
+2023-07-17 00:15:39.868 | INFO     | __main__:run_winclip:42 - bottle=======p_pro: 0.00
+2023-07-17 00:15:39.868 | INFO     | __main__:run_winclip:42 - bottle=======i_f1: 97.60
+2023-07-17 00:15:39.869 | INFO     | __main__:run_winclip:42 - bottle=======p_f1: 52.71
+2023-07-17 00:15:39.869 | INFO     | __main__:run_winclip:42 - bottle=======r_f1: 0.00
+2023-07-17 00:15:39.892 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/cable
+2023-07-17 00:15:39.896 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: cable/150, batch size: 128
+2023-07-17 00:15:42.469 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-17 00:15:42.756 | INFO     | test:test:28 - build text feature gallery finished.
+2023-07-17 00:16:09.286 | INFO     | __main__:run_winclip:42 - cable=======i_roc: 44.43
+2023-07-17 00:16:09.286 | INFO     | __main__:run_winclip:42 - cable=======p_roc: 49.37
+2023-07-17 00:16:09.287 | INFO     | __main__:run_winclip:42 - cable=======p_pro: 0.00
+2023-07-17 00:16:09.287 | INFO     | __main__:run_winclip:42 - cable=======i_f1: 76.35
+2023-07-17 00:16:09.287 | INFO     | __main__:run_winclip:42 - cable=======p_f1: 5.74
+2023-07-17 00:16:09.287 | INFO     | __main__:run_winclip:42 - cable=======r_f1: 0.00
+2023-07-17 00:16:09.311 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/capsule
+2023-07-17 00:16:09.314 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: capsule/132, batch size: 128
+2023-07-17 00:16:11.910 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-17 00:16:12.201 | INFO     | test:test:28 - build text feature gallery finished.
+2023-07-17 00:16:36.617 | INFO     | __main__:run_winclip:42 - capsule=======i_roc: 54.61
+2023-07-17 00:16:36.617 | INFO     | __main__:run_winclip:42 - capsule=======p_roc: 84.41
+2023-07-17 00:16:36.618 | INFO     | __main__:run_winclip:42 - capsule=======p_pro: 0.00
+2023-07-17 00:16:36.618 | INFO     | __main__:run_winclip:42 - capsule=======i_f1: 90.46
+2023-07-17 00:16:36.618 | INFO     | __main__:run_winclip:42 - capsule=======p_f1: 10.01
+2023-07-17 00:16:36.619 | INFO     | __main__:run_winclip:42 - capsule=======r_f1: 0.00
+2023-07-17 00:16:36.643 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/hazelnut
+2023-07-17 00:16:36.647 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: hazelnut/110, batch size: 128
+2023-07-17 00:16:39.214 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-17 00:16:39.499 | INFO     | test:test:28 - build text feature gallery finished.
+2023-07-17 00:16:56.995 | INFO     | __main__:run_winclip:42 - hazelnut=======i_roc: 74.39
+2023-07-17 00:16:56.995 | INFO     | __main__:run_winclip:42 - hazelnut=======p_roc: 96.18
+2023-07-17 00:16:56.995 | INFO     | __main__:run_winclip:42 - hazelnut=======p_pro: 0.00
+2023-07-17 00:16:56.996 | INFO     | __main__:run_winclip:42 - hazelnut=======i_f1: 79.49
+2023-07-17 00:16:56.996 | INFO     | __main__:run_winclip:42 - hazelnut=======p_f1: 42.42
+2023-07-17 00:16:56.996 | INFO     | __main__:run_winclip:42 - hazelnut=======r_f1: 0.00
+2023-07-17 00:16:57.020 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/metal_nut
+2023-07-17 00:16:57.023 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: metal_nut/115, batch size: 128
+2023-07-17 00:16:59.598 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-17 00:16:59.889 | INFO     | test:test:28 - build text feature gallery finished.
+2023-07-17 00:17:19.305 | INFO     | __main__:run_winclip:42 - metal_nut=======i_roc: 42.57
+2023-07-17 00:17:19.306 | INFO     | __main__:run_winclip:42 - metal_nut=======p_roc: 44.54
+2023-07-17 00:17:19.306 | INFO     | __main__:run_winclip:42 - metal_nut=======p_pro: 0.00
+2023-07-17 00:17:19.306 | INFO     | __main__:run_winclip:42 - metal_nut=======i_f1: 89.42
+2023-07-17 00:17:19.307 | INFO     | __main__:run_winclip:42 - metal_nut=======p_f1: 22.65
+2023-07-17 00:17:19.307 | INFO     | __main__:run_winclip:42 - metal_nut=======r_f1: 0.00
+2023-07-17 00:17:19.331 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/pill
+2023-07-17 00:17:19.335 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: pill/167, batch size: 128
+2023-07-17 00:17:21.925 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-17 00:17:22.220 | INFO     | test:test:28 - build text feature gallery finished.
+2023-07-17 00:17:50.617 | INFO     | __main__:run_winclip:42 - pill=======i_roc: 76.98
+2023-07-17 00:17:50.617 | INFO     | __main__:run_winclip:42 - pill=======p_roc: 89.07
+2023-07-17 00:17:50.618 | INFO     | __main__:run_winclip:42 - pill=======p_pro: 0.00
+2023-07-17 00:17:50.618 | INFO     | __main__:run_winclip:42 - pill=======i_f1: 91.58
+2023-07-17 00:17:50.618 | INFO     | __main__:run_winclip:42 - pill=======p_f1: 27.08
+2023-07-17 00:17:50.619 | INFO     | __main__:run_winclip:42 - pill=======r_f1: 0.00
+2023-07-17 00:17:50.645 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/screw
+2023-07-17 00:17:50.649 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: screw/160, batch size: 128
+2023-07-17 00:17:53.211 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-17 00:17:53.496 | INFO     | test:test:28 - build text feature gallery finished.

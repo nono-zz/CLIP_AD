@@ -1,0 +1,24 @@
+2023-07-17 22:56:30.768 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/hazelnut
+2023-07-17 22:56:30.772 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: hazelnut/110, batch size: 128
+2023-07-17 22:56:33.552 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-17 22:56:33.708 | INFO     | test:test:28 - build text feature gallery finished.
+2023-07-17 22:56:56.066 | INFO     | __main__:run_winclip:42 - hazelnut=======i_roc: 77.89
+2023-07-17 22:56:56.066 | INFO     | __main__:run_winclip:42 - hazelnut=======p_roc: 96.32
+2023-07-17 22:56:56.067 | INFO     | __main__:run_winclip:42 - hazelnut=======p_pro: 0.00
+2023-07-17 22:56:56.067 | INFO     | __main__:run_winclip:42 - hazelnut=======i_f1: 80.79
+2023-07-17 22:56:56.068 | INFO     | __main__:run_winclip:42 - hazelnut=======p_f1: 43.11
+2023-07-17 22:56:56.068 | INFO     | __main__:run_winclip:42 - hazelnut=======r_f1: 0.00
+2023-07-17 22:56:56.101 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/metal_nut
+2023-07-17 22:56:56.103 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: metal_nut/115, batch size: 128
+2023-07-17 22:56:58.699 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-17 22:56:58.876 | INFO     | test:test:28 - build text feature gallery finished.
+2023-07-17 22:57:22.285 | INFO     | __main__:run_winclip:42 - metal_nut=======i_roc: 47.17
+2023-07-17 22:57:22.285 | INFO     | __main__:run_winclip:42 - metal_nut=======p_roc: 44.45
+2023-07-17 22:57:22.286 | INFO     | __main__:run_winclip:42 - metal_nut=======p_pro: 0.00
+2023-07-17 22:57:22.287 | INFO     | __main__:run_winclip:42 - metal_nut=======i_f1: 89.42
+2023-07-17 22:57:22.287 | INFO     | __main__:run_winclip:42 - metal_nut=======p_f1: 21.17
+2023-07-17 22:57:22.288 | INFO     | __main__:run_winclip:42 - metal_nut=======r_f1: 0.00
+2023-07-17 22:57:22.321 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/pill
+2023-07-17 22:57:22.324 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: pill/167, batch size: 128
+2023-07-17 22:57:25.040 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-17 22:57:25.220 | INFO     | test:test:28 - build text feature gallery finished.

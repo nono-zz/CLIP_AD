@@ -1,0 +1,14 @@
+2023-07-16 23:57:52.561 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/carpet
+2023-07-16 23:58:06.887 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: carpet/117, batch size: 128
+2023-07-16 23:58:19.980 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-16 23:58:20.274 | INFO     | test:test:28 - build text feature gallery finished.
+2023-07-16 23:59:01.497 | INFO     | __main__:run_winclip:42 - carpet=======i_roc: 78.37
+2023-07-16 23:59:01.497 | INFO     | __main__:run_winclip:42 - carpet=======p_roc: 88.68
+2023-07-16 23:59:01.497 | INFO     | __main__:run_winclip:42 - carpet=======p_pro: 0.00
+2023-07-16 23:59:01.497 | INFO     | __main__:run_winclip:42 - carpet=======i_f1: 88.54
+2023-07-16 23:59:01.497 | INFO     | __main__:run_winclip:42 - carpet=======p_f1: 32.94
+2023-07-16 23:59:01.498 | INFO     | __main__:run_winclip:42 - carpet=======r_f1: 0.00
+2023-07-16 23:59:01.507 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/grid
+2023-07-16 23:59:01.515 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: grid/78, batch size: 128
+2023-07-16 23:59:04.072 | INFO     | test:test:26 - begin build text feature gallery...
+2023-07-16 23:59:04.357 | INFO     | test:test:28 - build text feature gallery finished.

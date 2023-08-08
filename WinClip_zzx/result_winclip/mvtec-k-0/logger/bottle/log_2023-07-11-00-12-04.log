@@ -1,0 +1,2 @@
+2023-07-11 00:12:04.722 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/bottle
+2023-07-11 00:12:06.203 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/bottle
