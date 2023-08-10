@@ -1,1 +1,0 @@
-2023-07-23 23:42:36.485 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/carpet

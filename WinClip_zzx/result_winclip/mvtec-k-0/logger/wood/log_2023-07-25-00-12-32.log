@@ -1,2 +1,0 @@
-2023-07-25 00:54:32.251 | INFO     | utils.training_utils:get_dir_from_args:51 - ===> Root dir for this experiment: ./result_winclip/mvtec-k-0/logger/wood
-2023-07-25 00:54:32.254 | INFO     | datasets:get_dataloader_from_args:43 - ===> datasets: mvtec, class name/len: wood/79, batch size: 128
