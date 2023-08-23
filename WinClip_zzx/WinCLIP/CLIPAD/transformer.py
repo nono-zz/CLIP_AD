@@ -225,9 +225,15 @@ class ResidualAttentionBlock(nn.Module):
         v_x = v_x if v_x is not None else q_x
 
         attn_mask = attn_mask.to(q_x.dtype) if attn_mask is not None else None
-        return self.attn(
-            q_x, k_x, v_x, need_weights=False, attn_mask=attn_mask
-        )[0]
+        
+        if isinstance(self.attn, VVAttention):
+            x = q_x.transpose(0,1)
+            x = self.attn(x)
+            return x.transpose(0,1)
+        else:
+            return self.attn(
+                q_x, k_x, v_x, need_weights=False, attn_mask=attn_mask
+            )[0]
 
     def forward(
             self,
@@ -310,14 +316,38 @@ class Transformer(nn.Module):
     def get_cast_dtype(self) -> torch.dtype:
         return self.resblocks[0].mlp.c_fc.weight.dtype
 
-    def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
-        for r in self.resblocks:
-            if self.grad_checkpointing and not torch.jit.is_scripting():
-                # TODO: handle kwargs https://github.com/pytorch/pytorch/issues/79887#issuecomment-1161758372
-                x = checkpoint(r, x, None, None, attn_mask)
-            else:
-                x = r(x, attn_mask=attn_mask)
-        return x
+    def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None, mode: Optional[str]=None):
+        if not mode:
+            for r in self.resblocks:
+                if self.grad_checkpointing and not torch.jit.is_scripting():
+                    # TODO: handle kwargs https://github.com/pytorch/pytorch/issues/79887#issuecomment-1161758372
+                    x = checkpoint(r, x, None, None, attn_mask)
+                else:
+                    x = r(x, attn_mask=attn_mask)
+            return x
+        
+        elif mode == 'last_query':
+            for r in self.resblocks[:-1]:
+                if self.grad_checkpointing and not torch.jit.is_scripting():
+                    # TODO: handle kwargs https://github.com/pytorch/pytorch/issues/79887#issuecomment-1161758372
+                    x = checkpoint(r, x, None, None, attn_mask)
+                else:
+                    x = r(x, attn_mask=attn_mask)
+            return x
+        
+        elif mode == 'last_value':
+            for r in self.resblocks[:-1]:
+                if self.grad_checkpointing and not torch.jit.is_scripting():
+                    # TODO: handle kwargs https://github.com/pytorch/pytorch/issues/79887#issuecomment-1161758372
+                    x = checkpoint(r, x, None, None, attn_mask)
+                else:
+                    x = r(x, attn_mask=attn_mask)
+            
+            r = self.resblocks[-1]
+            x = r(x, attn_mask=attn_mask, return_value=True)
+            
+            return x
+            
 
 
 class VisionTransformer(nn.Module):
@@ -501,6 +531,48 @@ class VisionTransformer(nn.Module):
         return pooled
 
 
+# implement attention module for v-v self-attention
+class VVAttention(nn.Module):
+    def __init__(self, out_dim, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., settings=''):
+        super().__init__()
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        self.scale = qk_scale or head_dim ** -0.5
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(out_dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+        self.settings = settings
+
+    def forward(self, x):
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
+
+        # replace k & q by v
+        k = v
+        q = k
+
+        # resnets have only one self-attention, norm and larger scale perform better
+        if self.settings == 'resnet':
+            k = k / (k.norm(p=2, dim=-1, keepdim=True) + 1e-6)
+            q = k
+            scale = self.scale * 8
+        else:
+            scale = self.scale
+        
+        # self-attention, higher temperate for resnets performs better
+        attn = (q @ k.transpose(-2, -1)) * scale
+        attn = (attn).softmax(dim=-1)
+        attn = self.attn_drop(attn)
+
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C) # clip_surgery
+        #x = v.transpose(1, 2).reshape(B, N, C) # mask_clip
+        x = self.proj_drop(self.proj(x))
+        return x
+
+
 class WindowVisionTransformer(nn.Module):
     output_tokens: torch.jit.Final[bool]
 
@@ -523,7 +595,8 @@ class WindowVisionTransformer(nn.Module):
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
             output_tokens: bool = False,
-            scales: tuple=(2, 3, 15)
+            scales: tuple=(2, 3, 15),
+            vvattention: bool=True
     ):
         super().__init__()
         self.output_tokens = output_tokens
@@ -582,10 +655,11 @@ class WindowVisionTransformer(nn.Module):
         self.use_pix_multi_scale_zzx = False
         self.use_pix_multi_scale = True
         
-        if 999 not in scales:
-            self.generate_window_masks()
-        else:
-            self.use_pix_multi_scale = False
+        self.embed_dim = width
+        self.num_heads = heads
+        self.vvattention=vvattention
+        
+        self.generate_window_masks()
 
     def generate_window_masks(self):
         scales = self.scales
@@ -595,7 +669,8 @@ class WindowVisionTransformer(nn.Module):
         masks = []
     
         scale_begin_indx = []
-        for scale in scales:
+        if isinstance(scales, int):
+            scale = scales
             scale_begin_indx += [len(masks)]
             for i in range(self.grid_size[0]):
                 for j in range(self.grid_size[1]):
@@ -603,6 +678,17 @@ class WindowVisionTransformer(nn.Module):
                         continue
 
                     masks += [index_mask[i:i + scale, j:j + scale]]
+                
+        
+        elif isinstance(scales, tuple):    
+            for scale in scales:
+                scale_begin_indx += [len(masks)]
+                for i in range(self.grid_size[0]):
+                    for j in range(self.grid_size[1]):
+                        if i + scale > self.grid_size[0] or j + scale > self.grid_size[1]:
+                            continue
+
+                        masks += [index_mask[i:i + scale, j:j + scale]]
 
         self.scale_begin_indx = scale_begin_indx
         self.masks = masks
@@ -714,6 +800,16 @@ class WindowVisionTransformer(nn.Module):
             return x[:, 0], x[:, 1:]
 
     def forward(self, x: torch.Tensor):
+        # determine wether apply vv attention or not
+        if self.vvattention:
+            if not isinstance(self.transformer.resblocks[-1].attn, VVAttention):
+                self.attn = VVAttention(self.embed_dim, self.embed_dim, self.num_heads, True)
+                self.attn.qkv.weight.data = self.transformer.resblocks[-1].attn.in_proj_weight.clone()
+                self.attn.qkv.bias.data = self.transformer.resblocks[-1].attn.in_proj_bias.clone()
+                self.attn.proj.weight.data = self.transformer.resblocks[-1].attn.out_proj.weight.clone()
+                self.attn.proj.bias.data = self.transformer.resblocks[-1].attn.out_proj.bias.clone()
+                self.transformer.resblocks[-1].attn = self.attn
+
 
         # to patches - whether to use dual patchnorm - https://arxiv.org/abs/2302.01327v1
         if self.input_patchnorm:
@@ -786,6 +882,14 @@ class WindowVisionTransformer(nn.Module):
 
                 pooled_list += [p for p in pooled]
                 tokens_list += [t for t in tokens]
+                            
+              
+            if self.output_tokens:
+                return pooled_list, tokens_list
+
+            # return pooled_list
+            return tokens_list
+
                 
         elif self.use_pix_multi_scale_zzx == True:
             # cancel the class token
@@ -815,16 +919,10 @@ class WindowVisionTransformer(nn.Module):
                 tokens_list += [tokens]
                 
             return tokens_list
-            
-
+        
         else:
             raise NotImplementedError
-        
-        if self.output_tokens:
-            return pooled_list, tokens_list
 
-        # return pooled_list
-        return tokens_list      #
 
 class TextTransformer(nn.Module):
     output_tokens: torch.jit.Final[bool]
