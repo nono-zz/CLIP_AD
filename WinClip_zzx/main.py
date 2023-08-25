@@ -14,6 +14,7 @@ def run_winclip(classname, args):
     # prepare the experiment dir
     kwargs = vars(args)
     kwargs['class_name'] = classname
+    kwargs['root_dir'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), kwargs['root_dir'])
     model_dir, img_dir, logger_dir, model_name, csv_path = get_dir_from_args(**kwargs)
 
     # get device
@@ -57,10 +58,10 @@ def get_args():
 
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--vis', type=bool, choices=[True, False], default=True)
-    parser.add_argument("--root-dir", type=str, default="./result_winclip")
+    parser.add_argument("--root-dir", type=str, default="result_winclip")
     parser.add_argument("--load-memory", type=bool, default=True)
     parser.add_argument("--cal-pro", type=bool, default=False)
-    parser.add_argument("--experiment_indx", type=int, default=0)
+    parser.add_argument("--experiment_indx", type=int, default=1)
     parser.add_argument("--gpu-id", type=int, default=0)
 
     # pure test
@@ -70,6 +71,7 @@ def get_args():
     parser.add_argument('--k-shot', type=int, default=0)
     # parser.add_argument('--scales', nargs='+', type=int, default=(2, 3, 15)) 
     parser.add_argument('--scales', nargs='+', type=int, default=(15))
+    parser.add_argument('--attention_mode', type=str, choices=['vv', 'v', 'qkv'], default='qkv') 
     parser.add_argument("--backbone", type=str, default="ViT-B-16-plus-240",
                         choices=['ViT-B-16-plus-240'])
     parser.add_argument("--pretrained_dataset", type=str, default="laion400m_e32")
