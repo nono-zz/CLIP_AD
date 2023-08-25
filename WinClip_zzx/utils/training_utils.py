@@ -25,8 +25,16 @@ def setup_seed(seed):
 
 
 def get_dir_from_args(root_dir, class_name, **kwargs):
+    
+    # the formation of the result folder: mvtec-scales_2_3_15-attention_vv
+    if isinstance(kwargs['scales'], int):
+        scales_string = str(kwargs['scales'])
+    else:
+        scales_string = "_".join(str(scale) for scale in kwargs['scales'])
+    attention_string = kwargs['attention_mode']
+    exp_name = f"{kwargs['dataset']}-{scales_string}-{attention_string}"
 
-    exp_name = f"{kwargs['dataset']}-k-{kwargs['k_shot']}"
+    # exp_name = f"{kwargs['dataset']}-{kwargs['k_shot']}"
 
     csv_dir = os.path.join(root_dir, 'csv')
     csv_path = os.path.join(csv_dir, f"{exp_name}-indx-{kwargs['experiment_indx']}.csv")
