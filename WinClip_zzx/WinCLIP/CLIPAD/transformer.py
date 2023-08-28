@@ -567,7 +567,8 @@ class VVAttention(nn.Module):
         attn = (q @ k.transpose(-2, -1)) * scale
         attn = (attn).softmax(dim=-1)
         attn = self.attn_drop(attn)
-
+        
+        # @ means matrix multiplication
         x = (attn @ v).transpose(1, 2).reshape(B, N, C) # clip_surgery
         #x = v.transpose(1, 2).reshape(B, N, C) # mask_clip
         x = self.proj_drop(self.proj(x))
@@ -578,7 +579,7 @@ class VVAttention(nn.Module):
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
 
-        x = v   # directly convey v
+        x = v.transpose(1, 2).reshape(B, N, C)  # directly convey v
         x = self.proj_drop(self.proj(x))
         return x
     
@@ -611,7 +612,7 @@ class VVAttention(nn.Module):
         elif self.attention_mode == 'vv':
             return self.forward_vv(x)
         elif self.attention_mode == 'v':
-            return self.forward.v(x)
+            return self.forward_v(x)
 
 class WindowVisionTransformer(nn.Module):
     output_tokens: torch.jit.Final[bool]
@@ -844,7 +845,7 @@ class WindowVisionTransformer(nn.Module):
         # if self.vvattention:
         if not isinstance(self.transformer.resblocks[-1].attn, VVAttention):
             self.attn = VVAttention(self.embed_dim, self.embed_dim, self.num_heads, True, attention_mode=self.attention_mode)
-            self.attn.qkv.weight.data = self.transformer.resblock[-1].attn.in_proj_weight.clone()
+            self.attn.qkv.weight.data = self.transformer.resblocks[-1].attn.in_proj_weight.clone()
             self.attn.qkv.bias.data = self.transformer.resblocks[-1].attn.in_proj_bias.clone()
             self.attn.proj.weight.data = self.transformer.resblocks[-1].attn.out_proj.weight.clone()
             self.attn.proj.bias.data = self.transformer.resblocks[-1].attn.out_proj.bias.clone()

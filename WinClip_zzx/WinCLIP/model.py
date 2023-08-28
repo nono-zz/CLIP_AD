@@ -30,12 +30,12 @@ class WinClipAD(torch.nn.Module):
         self.out_size_h = out_size_h
         self.out_size_w = out_size_w
         self.precision =  'fp16' #precision  -40% GPU memory (2.8G->1.6G) with slight performance drop 
-
-        self.device = device
-        self.get_model(backbone, pretrained_dataset, scales)
-        self.phrase_form = '{}'
         
         self.attention_mode = kwargs['attention_mode']
+        
+        self.device = device
+        self.get_model(backbone, pretrained_dataset, scales, self.attention_mode)
+        self.phrase_form = '{}'
 
         # version v1: no norm for each of linguistic embedding
         # version v1:    norm for each of linguistic embedding
@@ -57,7 +57,7 @@ class WinClipAD(torch.nn.Module):
 
         print(f'fusion version: {self.fusion_version}')
 
-    def get_model(self, backbone, pretrained_dataset, scales):
+    def get_model(self, backbone, pretrained_dataset, scales, attention_mode):
 
         assert backbone in valid_backbones
         assert pretrained_dataset in valid_pretrained_datasets
