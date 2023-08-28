@@ -533,7 +533,7 @@ class VisionTransformer(nn.Module):
 
 # implement attention module for v-v self-attention
 class VVAttention(nn.Module):
-    def __init__(self, out_dim, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., settings=''):
+    def __init__(self, out_dim, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., settings='', attention_mode='qkv'):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
@@ -544,8 +544,9 @@ class VVAttention(nn.Module):
         self.proj = nn.Linear(out_dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
         self.settings = settings
+        self.attention_mode = attention_mode
 
-    def forward(self, x):
+    def forward_vv(self, x):
         B, N, C = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
@@ -572,6 +573,45 @@ class VVAttention(nn.Module):
         x = self.proj_drop(self.proj(x))
         return x
 
+    def forward_v(self, x):
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
+
+        x = v   # directly convey v
+        x = self.proj_drop(self.proj(x))
+        return x
+    
+    def forward_qkv(self, x):
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
+
+        # resnets have only one self-attention, norm and larger scale perform better
+        if self.settings == 'resnet':
+            k = k / (k.norm(p=2, dim=-1, keepdim=True) + 1e-6)
+            q = k
+            scale = self.scale * 8
+        else:
+            scale = self.scale
+        
+        # self-attention, higher temperate for resnets performs better
+        attn = (q @ k.transpose(-2, -1)) * scale
+        attn = (attn).softmax(dim=-1)
+        attn = self.attn_drop(attn)
+
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C) # clip_surgery
+        #x = v.transpose(1, 2).reshape(B, N, C) # mask_clip
+        x = self.proj_drop(self.proj(x))
+        return x
+    
+    def forward(self, x):
+        if self.attention_mode == 'qkv':
+            return self.forward_qkv(x)
+        elif self.attention_mode == 'vv':
+            return self.forward_vv(x)
+        elif self.attention_mode == 'v':
+            return self.forward.v(x)
 
 class WindowVisionTransformer(nn.Module):
     output_tokens: torch.jit.Final[bool]
@@ -596,7 +636,7 @@ class WindowVisionTransformer(nn.Module):
             norm_layer: Callable = LayerNorm,
             output_tokens: bool = False,
             scales: tuple=(2, 3, 15),
-            vvattention: bool=True
+            attention_mode: str='qkv',
     ):
         super().__init__()
         self.output_tokens = output_tokens
@@ -657,7 +697,7 @@ class WindowVisionTransformer(nn.Module):
         
         self.embed_dim = width
         self.num_heads = heads
-        self.vvattention=vvattention
+        self.attention_mode=attention_mode
         
         self.generate_window_masks()
 
@@ -801,14 +841,14 @@ class WindowVisionTransformer(nn.Module):
 
     def forward(self, x: torch.Tensor):
         # determine wether apply vv attention or not
-        if self.vvattention:
-            if not isinstance(self.transformer.resblocks[-1].attn, VVAttention):
-                self.attn = VVAttention(self.embed_dim, self.embed_dim, self.num_heads, True)
-                self.attn.qkv.weight.data = self.transformer.resblocks[-1].attn.in_proj_weight.clone()
-                self.attn.qkv.bias.data = self.transformer.resblocks[-1].attn.in_proj_bias.clone()
-                self.attn.proj.weight.data = self.transformer.resblocks[-1].attn.out_proj.weight.clone()
-                self.attn.proj.bias.data = self.transformer.resblocks[-1].attn.out_proj.bias.clone()
-                self.transformer.resblocks[-1].attn = self.attn
+        # if self.vvattention:
+        if not isinstance(self.transformer.resblocks[-1].attn, VVAttention):
+            self.attn = VVAttention(self.embed_dim, self.embed_dim, self.num_heads, True, attention_mode=self.attention_mode)
+            self.attn.qkv.weight.data = self.transformer.resblock[-1].attn.in_proj_weight.clone()
+            self.attn.qkv.bias.data = self.transformer.resblocks[-1].attn.in_proj_bias.clone()
+            self.attn.proj.weight.data = self.transformer.resblocks[-1].attn.out_proj.weight.clone()
+            self.attn.proj.bias.data = self.transformer.resblocks[-1].attn.out_proj.bias.clone()
+            self.transformer.resblocks[-1].attn = self.attn
 
 
         # to patches - whether to use dual patchnorm - https://arxiv.org/abs/2302.01327v1

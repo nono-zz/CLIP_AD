@@ -77,7 +77,8 @@ def _build_vision_tower(
         vision_cfg: CLIPVisionCfg,
         quick_gelu: bool = False,
         cast_dtype: Optional[torch.dtype] = None,
-        scales: tuple=(2, 3, 15)
+        scales: tuple=(2, 3, 15),
+        attention_mode: str='qkv',
 ):
     if isinstance(vision_cfg, dict):
         vision_cfg = CLIPVisionCfg(**vision_cfg)
@@ -130,7 +131,8 @@ def _build_vision_tower(
             output_dim=embed_dim,
             act_layer=act_layer,
             norm_layer=norm_layer,
-            scales=scales
+            scales=scales,
+            attention_mode=attention_mode,
         )
 
     return visual
@@ -186,11 +188,12 @@ class CLIP(nn.Module):
             quick_gelu: bool = False,
             cast_dtype: Optional[torch.dtype] = None,
             output_dict: bool = False,
-            scales: tuple=(2, 3)
+            scales: tuple=(2, 3),
+            attention_mode: str='qkv',
     ):
         super().__init__()
         self.output_dict = output_dict
-        self.visual = _build_vision_tower(embed_dim, vision_cfg, quick_gelu, cast_dtype, scales)
+        self.visual = _build_vision_tower(embed_dim, vision_cfg, quick_gelu, cast_dtype, scales, attention_mode)
 
         text = _build_text_tower(embed_dim, text_cfg, quick_gelu, cast_dtype)
         self.transformer = text.transformer

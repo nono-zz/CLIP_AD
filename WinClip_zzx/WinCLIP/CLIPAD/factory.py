@@ -119,7 +119,8 @@ def create_model(
         cache_dir: Optional[str] = None,
         output_dict: Optional[bool] = None,
         require_pretrained: bool = False,
-        scales: tuple=(2, 3, 15)
+        scales: tuple=(2, 3, 15),
+        attention_mode: str='qkv',
 ):
     has_hf_hub_prefix = model_name.startswith(HF_HUB_PREFIX)
     if has_hf_hub_prefix:
@@ -192,7 +193,7 @@ def create_model(
             else:
                 model = CustomTextCLIP(**model_cfg, cast_dtype=cast_dtype)
         else:
-            model = CLIP(**model_cfg, cast_dtype=cast_dtype, scales=scales)
+            model = CLIP(**model_cfg, cast_dtype=cast_dtype, scales=scales, attention_mode=attention_mode)
 
         pretrained_loaded = False
         if pretrained:
@@ -289,7 +290,8 @@ def create_model_and_transforms(
         aug_cfg: Optional[Union[Dict[str, Any], AugmentationCfg]] = None,
         cache_dir: Optional[str] = None,
         output_dict: Optional[bool] = None,
-        scales: tuple=(2, 3, 15)
+        scales: tuple=(2, 3, 15),
+        attention_mode: str='qkv',
 ):
     model = create_model(
         model_name,
@@ -305,7 +307,8 @@ def create_model_and_transforms(
         pretrained_hf=pretrained_hf,
         cache_dir=cache_dir,
         output_dict=output_dict,
-        scales=scales
+        scales=scales,
+        attention_mode=attention_mode,
     )
 
     image_mean = image_mean or getattr(model.visual, 'image_mean', None)

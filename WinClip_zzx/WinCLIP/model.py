@@ -34,6 +34,8 @@ class WinClipAD(torch.nn.Module):
         self.device = device
         self.get_model(backbone, pretrained_dataset, scales)
         self.phrase_form = '{}'
+        
+        self.attention_mode = kwargs['attention_mode']
 
         # version v1: no norm for each of linguistic embedding
         # version v1:    norm for each of linguistic embedding
@@ -60,7 +62,7 @@ class WinClipAD(torch.nn.Module):
         assert backbone in valid_backbones
         assert pretrained_dataset in valid_pretrained_datasets
 
-        model, _, _ = CLIPAD.create_model_and_transforms(model_name=backbone, pretrained=pretrained_dataset, scales=scales, precision = self.precision)
+        model, _, _ = CLIPAD.create_model_and_transforms(model_name=backbone, pretrained=pretrained_dataset, scales=scales, precision = self.precision, attention_mode=self.attention_mode)
         tokenizer = CLIPAD.get_tokenizer(backbone)
         model.eval().to(self.device)
 
