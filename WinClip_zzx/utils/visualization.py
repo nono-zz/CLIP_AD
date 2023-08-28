@@ -42,7 +42,7 @@ def plot_sample_cv2(names, imgs, scores_: dict, gts, save_folder=None):
 
         for key in scores:
             heat_map = cv2.applyColorMap(scores[key][idx], cv2.COLORMAP_JET)
-            visz_map = cv2.addWeighted(heat_map, 0.5, imgs[idx], 0.5, 0)
+            visz_map = cv2.addWeighted(heat_map, 0.6, imgs[idx], 0.4, 0)
             cv2.imwrite(os.path.join(save_folder, f'{names[idx]}_{key}.jpg'),
                         visz_map)
 

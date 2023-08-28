@@ -69,9 +69,9 @@ def get_args():
 
     # method related parameters
     parser.add_argument('--k-shot', type=int, default=0)
-    # parser.add_argument('--scales', nargs='+', type=int, default=(2, 3, 15)) 
-    parser.add_argument('--scales', nargs='+', type=int, default=(15))
-    parser.add_argument('--attention_mode', type=str, choices=['vv', 'v', 'qkv'], default='vv') 
+    parser.add_argument('--scales', nargs='+', type=tuple, default=(2, 3, 15)) 
+    # parser.add_argument('--scales', nargs='+', type=int, default=(15))
+    parser.add_argument('--attention_mode', type=str, choices=['vv', 'v', 'qkv'], default='v') 
     parser.add_argument("--backbone", type=str, default="ViT-B-16-plus-240",
                         choices=['ViT-B-16-plus-240'])
     parser.add_argument("--pretrained_dataset", type=str, default="laion400m_e32")
