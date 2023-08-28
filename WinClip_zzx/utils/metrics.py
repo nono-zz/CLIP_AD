@@ -41,9 +41,19 @@ def metric_cal(scores, gt_list, gt_mask_list, cal_pro=False):
         pro_auc_score = 0
         # calculate max-f1 region
         max_f1_region = 0
+        
+    # calculate the gt anomaly/normal ratio: both image-level and pixel-level
+    i_ratio = gt_list.sum()/len(gt_list)
+    total_ones = 0
+    total_elements = 0
+    for array in gt_mask_list:
+        total_ones += np.sum(array == 1)
+        total_elements += array.size
+    p_ratio = total_ones / total_elements
+        
 
     result_dict = {'i_roc': img_roc_auc * 100, 'p_roc': per_pixel_rocauc * 100, 'p_pro': pro_auc_score * 100,
-     'i_f1': img_f1 * 100, 'p_f1': pxl_f1 * 100, 'r_f1': max_f1_region * 100}
+     'i_f1': img_f1 * 100, 'p_f1': pxl_f1 * 100, 'r_f1': max_f1_region * 100, 'a/n_i_ratio': i_ratio, 'a/n_p_ratio': p_ratio}
 
     return result_dict
 
