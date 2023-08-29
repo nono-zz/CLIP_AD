@@ -353,8 +353,8 @@ def encode_text_with_prompt_ensemble_anomaly(model, category, device):
     abnormal_phrases = tokenize(abnormal_phrases).to(device)
 
 
-    normal_text_features = model.encode_text(normal_phrases)
-    abnormal_text_features = model.encode_text(abnormal_phrases)
+    normal_text_features = model(normal_phrases)
+    abnormal_text_features = model(abnormal_phrases)
     
     text_features = []
     normal_text_features /= normal_text_features.norm(dim=-1, keepdim=True)

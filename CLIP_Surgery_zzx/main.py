@@ -11,10 +11,28 @@ from test import test
 import clip_zzx
 from torchvision.transforms import Compose, Resize, ToTensor, Normalize
 from torchvision.transforms import InterpolationMode
+import torch.nn as nn
 BICUBIC = InterpolationMode.BICUBIC
-
-
 import os
+
+
+# define text clip and image clip seperately to enable model gpu parallel
+class TextCLIP(nn.Module):
+    def __init__(self, model) :
+        super(TextCLIP, self).__init__()
+        self.model = model
+        
+    def forward(self,text):
+        return self.model.encode_text(text)
+    
+class ImageCLIP(nn.Module):
+    def __init__(self, model) :
+        super(ImageCLIP, self).__init__()
+        self.model = model
+        
+    def forward(self,image):
+        return self.model.encode_image(image)
+
 
 def run_winclip(classname, args):
     # prepare the experiment dir
@@ -25,14 +43,22 @@ def run_winclip(classname, args):
 
     # get device
     if kwargs['use_cpu'] == 0:
-            device = f"cuda:0"
+            # device = f"cuda:1"
+        device = torch.device("cuda")
     else:
         device = f"cpu"
     kwargs['device'] = device
     
     # model
     model, _ = clip_zzx.load("ViT-B/16", device=device)
-    model.eval()
+    model_text = TextCLIP(model)
+    model_image = ImageCLIP(model)
+    model_text = torch.nn.DataParallel(model_text)
+    model_image = torch.nn.DataParallel(model_image)
+    model_image.eval()
+    model_text.eval()
+    # model.eval()
+    
     preprocess =  Compose([Resize((224, 224), interpolation=BICUBIC), ToTensor(),
                     Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))])
     
@@ -44,7 +70,7 @@ def run_winclip(classname, args):
     train_dataloader, train_dataset_inst = None, None
     
     # evaluation
-    metrics = test(model, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
+    metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
             class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
             resolution=kwargs['resolution'])
     # for k, v in metrics.items():
@@ -64,13 +90,13 @@ def get_args():
     parser.add_argument('--img-cropsize', type=int, default=240)
     parser.add_argument('--resolution', type=int, default=240)  # was 400
 
-    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--vis', type=bool, choices=[True, False], default=True)
     parser.add_argument("--root-dir", type=str, default="result_clipSurgery")
     parser.add_argument("--load-memory", type=bool, default=True)
     parser.add_argument("--cal-pro", type=bool, default=False)
     parser.add_argument("--experiment_indx", type=int, default=1)
-    parser.add_argument("--gpu-id", type=int, default=0)
+    parser.add_argument("--gpu-id", type=str, required=False, default=['0','1'])
 
     # pure test
     parser.add_argument("--pure-test", type=bool, default=False)
@@ -94,11 +120,26 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
     os.environ['CURL_CA_BUNDLE'] = ''
-    os.environ['CUDA_VISIBLE_DEVICES'] = f"{args.gpu_id}"
+    # os.environ['CUDA_VISIBLE_DEVICES'] = f"{args.gpu_id}"
+    datasets = ['mvtec']
+    
+    if args.gpu_id is None:
+        gpus = "0"
+        os.environ["CUDA_VISIBLE_DEVICES"]= gpus
+    else:
+        gpus = ""
+        for i in range(len(args.gpu_id)):
+            gpus = gpus + args.gpu_id[i] + ","
+        os.environ["CUDA_VISIBLE_DEVICES"]= gpus[:-1]
+
+    torch.backends.cudnn.enabled = True # make sure to use cudnn for computational performa
+    
     datasets = ['mvtec']
     
     for dataset in datasets:
         classes = dataset_classes[dataset]
+        # classes = ['bottle']
         for cls in classes[:]:
-            run_winclip(classname=cls, args=args)
+            with torch.cuda.device(args.gpu_id):
+                run_winclip(classname=cls, args=args)
         
