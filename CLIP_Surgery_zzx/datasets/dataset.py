@@ -50,13 +50,13 @@ class CLIPDataset(Dataset):
         # cv2_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
 
         if gt == 0:
-            gt = np.zeros([pil_img.size[0], pil_img.size[0]])
+            gt = np.zeros([img.shape[-2], img.shape[-1]])
         else:
             gt = cv2.imread(gt, cv2.IMREAD_GRAYSCALE)
+            gt = cv2.resize(gt, (img.shape[-2], img.shape[-1]), interpolation=cv2.INTER_NEAREST)
             gt[gt > 0] = 255
 
         # img = cv2.resize(img, (1024, 1024))
-        # gt = cv2.resize(gt, (1024, 1024), interpolation=cv2.INTER_NEAREST)
 
         img_name = f'{self.category}-{img_type}-{os.path.basename(img_path[:-4])}'
 
