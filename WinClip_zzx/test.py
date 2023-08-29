@@ -38,6 +38,7 @@ def test(model,
         logger.info('build image feature gallery finished.')
 
     scores = []
+    multi_scale_scores = []
     test_imgs = []
     gt_list = []
     gt_mask_list = []
@@ -60,12 +61,36 @@ def test(model,
 
         data = data.to(device)
         score = model(data)
-        scores += score
-
+        if isinstance(score, tuple):
+            scores += score[0]
+            multi_scale_scores += score[1]
+        else:
+            scores += score
+            
     test_imgs, scores, gt_mask_list = specify_resolution(test_imgs, scores, gt_mask_list, resolution=(resolution, resolution))
+    
+    resized_multi_scale_scores = []
+    if not len(multi_scale_scores)==0:
+        for multi_scale_score in multi_scale_scores:
+            resized_multi_scale_score = [cv2.resize(multi_scale_score[i], (resolution, resolution), interpolation=cv2.INTER_CUBIC) for i in range(multi_scale_score.shape[0])]
+            resized_multi_scale_scores.append(resized_multi_scale_score)
+    # transpose list to [3, 117]
+    array_data = np.array(resized_multi_scale_scores)
+    transposed_array = np.transpose(array_data, (1, 0, 2, 3))
+    
+        
     result_dict = metric_cal(np.array(scores), gt_list, gt_mask_list, cal_pro=cal_pro)
 
     if is_vis:
-        plot_sample_cv2(names, test_imgs, {'WinClip': scores}, gt_mask_list, save_folder=img_dir)
+        plot_sample_cv2(names, test_imgs, {'WinClip': scores}, gt_mask_list, save_folder=img_dir, multi_scale_scores=resized_multi_scale_scores)
+        
+        if not len(multi_scale_scores)==0:
+            score_dict = {
+                'WinClip': scores,
+                'WinClip_scale_2': transposed_array[0],
+                'WinClip_scale_3': transposed_array[1],
+                'WinClip_scale_15': transposed_array[2],
+            }
+        plot_sample_cv2(names, test_imgs, score_dict, gt_mask_list, save_folder=img_dir, multi_scale_scores=resized_multi_scale_scores)
 
     return result_dict

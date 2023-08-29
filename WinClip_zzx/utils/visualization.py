@@ -15,7 +15,7 @@ from sklearn.decomposition import PCA
 import matplotlib.ticker as mtick
 
 
-def plot_sample_cv2(names, imgs, scores_: dict, gts, save_folder=None):
+def plot_sample_cv2(names, imgs, scores_: dict, gts, save_folder=None, multi_scale_scores=[]):
     # get subplot number
     total_number = len(imgs)
 
@@ -27,6 +27,7 @@ def plot_sample_cv2(names, imgs, scores_: dict, gts, save_folder=None):
 
         scores[k] = (scores[k] - min_value) / max_value * 255
         scores[k] = scores[k].astype(np.uint8)
+    
     # draw gts
     mask_imgs = []
     for idx in range(total_number):

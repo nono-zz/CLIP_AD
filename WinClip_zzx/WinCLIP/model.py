@@ -3,6 +3,7 @@ from . import CLIPAD
 from torch.nn import functional as F
 from .ad_prompts import *
 from PIL import Image
+import numpy as np
 
 valid_backbones = ['ViT-B-16-plus-240']
 valid_pretrained_datasets = ['laion400m_e32']
@@ -239,13 +240,20 @@ class WinClipAD(torch.nn.Module):
         # deal with the last one
         token_anomaly_scores = token_anomaly_scores / token_weights
         scale_anomaly_scores.append(token_anomaly_scores)
+        
+        # return different scale-anomaly scores
+        multi_scale_anomaly_scores = []
+        for scale_anomaly_score in scale_anomaly_scores:
+            # scale_average_anomaly_score = torch.mean(scale_anomaly_score, dim=0)
+            scale_anomaly_score = 1. - 1./scale_anomaly_score
+            multi_scale_anomaly_scores.append(scale_anomaly_score.reshape((N, self.grid_size[0], self.grid_size[1])).unsqueeze(1))
 
         scale_anomaly_scores = torch.stack(scale_anomaly_scores, dim=0)
-        scale_anomaly_scores = torch.mean(scale_anomaly_scores, dim=0)
-        scale_anomaly_scores = 1. - 1. / scale_anomaly_scores
+        average_anomaly_scores = torch.mean(scale_anomaly_scores, dim=0)
+        average_anomaly_scores = 1. - 1. / average_anomaly_scores
 
-        anomaly_map = scale_anomaly_scores.reshape((N, self.grid_size[0], self.grid_size[1])).unsqueeze(1)
-        return anomaly_map
+        anomaly_map = average_anomaly_scores.reshape((N, self.grid_size[0], self.grid_size[1])).unsqueeze(1)
+        return anomaly_map, multi_scale_anomaly_scores
     
     def calculate_textual_anomaly_score_zzx(self, visual_features):
         N = visual_features[0].shape[0]
@@ -433,11 +441,25 @@ class WinClipAD(torch.nn.Module):
 
         visual_features = self.encode_image(images)
         # textual_anomaly_map = self.calculate_textual_anomaly_score(visual_features)
-        textual_anomaly_map = self.calculate_textual_anomaly_score_token(visual_features)
+        textual_anomaly_maps = self.calculate_textual_anomaly_score_token(visual_features)
         # textual_anomaly_map = self.calculate_textual_anomaly_score_zzx(visual_features)
         # textual_anomaly_map = self.calculate_textual_anomaly_score_zzx_2(visual_features)
         # textual_anomaly_map = self.calculate_textual_anomaly_score_zzx_3(visual_features)
         # textual_anomaly_map = self.calculate_textual_anomaly_score_attn_mask(visual_features)
+        
+        if isinstance(textual_anomaly_maps, tuple):
+            textual_anomaly_map = textual_anomaly_maps[0]
+            multi_scale_anomaly_map = textual_anomaly_maps[1]
+            resized_scale_anomaly_map_list = []
+            for scale_anomaly_map in multi_scale_anomaly_map:
+                resized_scale_anomaly_map = F.interpolate(scale_anomaly_map, size=(self.out_size_h, self.out_size_w), mode='bilinear', align_corners=False)
+                resized_scale_anomaly_map = resized_scale_anomaly_map.squeeze(1).cpu().numpy()
+                resized_scale_anomaly_map_list.append(resized_scale_anomaly_map)
+            
+            reshaped_list = [np.array([array[i] for array in resized_scale_anomaly_map_list]) for i in range(resized_scale_anomaly_map.shape[0])]
+            
+        else:
+            textual_anomaly_map = textual_anomaly_maps
         
         if self.visual_gallery is not None:
             visual_anomaly_map = self.calculate_visual_anomaly_score(visual_features)
@@ -462,8 +484,11 @@ class WinClipAD(torch.nn.Module):
         for i in range(am_np.shape[0]):
             # am_np[i] = gaussian_filter(am_np[i], sigma=4)
             am_np_list.append(am_np[i])
-
-        return am_np_list
+            
+        if isinstance(textual_anomaly_maps, tuple):
+            return am_np_list, reshaped_list
+        else:
+            return am_np_list
 
     def train_mode(self):
         self.model.train()
