@@ -138,7 +138,8 @@ if __name__ == '__main__':
     
     for dataset in datasets:
         classes = dataset_classes[dataset]
-        # classes = ['bottle']
+        # classes = ['bottle', 'carpet', 'cable']
+        classes = ['grid', 'leather', 'tile']
         for cls in classes[:]:
             with torch.cuda.device(args.gpu_id):
                 run_winclip(classname=cls, args=args)
