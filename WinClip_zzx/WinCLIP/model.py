@@ -5,8 +5,8 @@ from .ad_prompts import *
 from PIL import Image
 import numpy as np
 
-valid_backbones = ['ViT-B-16-plus-240']
-valid_pretrained_datasets = ['laion400m_e32']
+valid_backbones = ['ViT-B-16-plus-240', 'ViT-B-16']
+valid_pretrained_datasets = ['laion400m_e32', 'openai']
 
 from torchvision import transforms
 

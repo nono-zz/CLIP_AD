@@ -7,6 +7,7 @@ from utils.training_utils import *
 # from utils.eval_utils import *
 from test import test
 
+from model_inference import ImageCLIP, TextCLIP
 # specifically for clip surgery
 import clip_zzx
 from torchvision.transforms import Compose, Resize, ToTensor, Normalize
@@ -15,23 +16,8 @@ import torch.nn as nn
 BICUBIC = InterpolationMode.BICUBIC
 import os
 
-
-# define text clip and image clip seperately to enable model gpu parallel
-class TextCLIP(nn.Module):
-    def __init__(self, model) :
-        super(TextCLIP, self).__init__()
-        self.model = model
-        
-    def forward(self,text):
-        return self.model.encode_text(text)
-    
-class ImageCLIP(nn.Module):
-    def __init__(self, model) :
-        super(ImageCLIP, self).__init__()
-        self.model = model
-        
-    def forward(self,image):
-        return self.model.encode_image(image)
+# specifically for clip
+import open_clip
 
 
 def run_winclip(classname, args):
@@ -51,13 +37,18 @@ def run_winclip(classname, args):
     
     # model
     model, _ = clip_zzx.load("ViT-B/16", device=device)
+    # model, _ = clip_zzx.load(args.backbone, device=device)
+
+    # model, _, preprocess = open_clip.create_model_and_transforms(args.backbone, pretrained='laion400m_e32')
+    # model_2, _, preprocess = open_clip.create_model_and_transforms("ViT-B/16")
+    model = model.to(device)
     model_text = TextCLIP(model)
     model_image = ImageCLIP(model)
     model_text = torch.nn.DataParallel(model_text)
     model_image = torch.nn.DataParallel(model_image)
     model_image.eval()
     model_text.eval()
-    # model.eval()
+
     
     preprocess =  Compose([Resize((224, 224), interpolation=BICUBIC), ToTensor(),
                     Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))])

@@ -368,6 +368,8 @@ def encode_text_with_prompt_ensemble_anomaly(model, category, device):
     text_features.append(abnormal_text_features)
     
     text_features = torch.stack(text_features, dim=1).to(device).t()
+    # apply softmax to text_features category
+    # text_features = text_features.softmax(dim=0)
 
     
     return text_features
