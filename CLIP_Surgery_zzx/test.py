@@ -68,8 +68,4 @@ def test(model_text,
     
     if is_vis:
         plot_sample_cv2(names, test_imgs, {'WinClip': similarity_map_list}, gt_mask_list, save_folder=img_dir)
-
-    # return result_dict
-    # del model
-    # del text_features
     return

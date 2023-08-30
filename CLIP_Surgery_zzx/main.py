@@ -70,16 +70,17 @@ def run_winclip(classname, args):
     train_dataloader, train_dataset_inst = None, None
     
     # evaluation
-    metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
-            class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
-            resolution=kwargs['resolution'])
+    with torch.no_grad():
+        metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
+                class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
+                resolution=kwargs['resolution'])
     # for k, v in metrics.items():
     #     logger.info(f"{kwargs['class_name']}======={k}: {v:.2f}")
         
     
     # save_metric(metrics, dataset_classes[kwargs['dataset']], kwargs['class_name'],
     #             kwargs['dataset'], csv_path)
-    
+    return
     
 def get_args():
     parser = argparse.ArgumentParser(description='Anomaly detection')
@@ -139,7 +140,7 @@ if __name__ == '__main__':
     for dataset in datasets:
         classes = dataset_classes[dataset]
         # classes = ['bottle', 'carpet', 'cable']
-        classes = ['grid', 'leather', 'tile']
+        # classes = ['grid', 'leather', 'tile']
         for cls in classes[:]:
             with torch.cuda.device(args.gpu_id):
                 run_winclip(classname=cls, args=args)
