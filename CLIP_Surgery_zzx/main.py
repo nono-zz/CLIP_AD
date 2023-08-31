@@ -44,8 +44,8 @@ def run_winclip(classname, args):
     model = model.to(device)
     model_text = TextCLIP(model)
     model_image = ImageCLIP(model)
-    # model_text = torch.nn.DataParallel(model_text)
-    # model_image = torch.nn.DataParallel(model_image)
+    model_text = torch.nn.DataParallel(model_text)
+    model_image = torch.nn.DataParallel(model_image)
     model_image.eval()
     model_text.eval()
 
