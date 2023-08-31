@@ -36,8 +36,8 @@ def run_winclip(classname, args):
     kwargs['device'] = device
     
     # model
-    model, _ = clip_zzx.load("ViT-B/16", device=device)
-    # model, _ = clip_zzx.load(args.backbone, device=device)
+    # model, _ = clip_zzx.load("ViT-B/16", device=device)
+    model, preprocess = clip_zzx.load("CS-ViT-B/16", device=device)
 
     # model, _, preprocess = open_clip.create_model_and_transforms(args.backbone, pretrained='laion400m_e32')
     # model_2, _, preprocess = open_clip.create_model_and_transforms("ViT-B/16")
@@ -98,8 +98,8 @@ def get_args():
     parser.add_argument('--scales', nargs='+', type=tuple, default=(2, 3, 15)) 
     # parser.add_argument('--scales', nargs='+', type=int, default=(15))
     parser.add_argument('--attention_mode', type=str, choices=['vv', 'v', 'qkv'], default='v') 
-    parser.add_argument("--backbone", type=str, default="ViT-B-16-plus-240",
-                        choices=['ViT-B-16-plus-240'])
+    parser.add_argument("--backbone", type=str, default="CS-ViT-B/16",
+                        choices=['ViT-B-16-plus-240', 'CS-ViT-B/16', 'ViT-B/16'])
     parser.add_argument("--pretrained_dataset", type=str, default="laion400m_e32")
 
     parser.add_argument("--use-cpu", type=int, default=0)
