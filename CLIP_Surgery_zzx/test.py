@@ -10,6 +10,8 @@ from utils.training_utils import *
 from utils.eval_utils import *
 from model_inference import encode_text_with_prompt_ensemble_anomaly
 
+from torchvision.utils import save_image
+
 import clip_zzx
 
 def test(model_text,
@@ -53,6 +55,7 @@ def test(model_text,
             gt_list += [l]
             gt_mask_list += [m]
 
+        save_image(data[0], 'processed_sample_image.png')
         data = data.to(device)
         image_features = model_image(data)
         # image_features = image_features / image_features.norm(dim=1, keepdim=True)
