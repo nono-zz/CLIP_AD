@@ -17,6 +17,7 @@ def load_mvtec(category, k_shot, experiment_indx):
         tot_types = []
 
         defect_types = os.listdir(root_path)
+        defect_types.sort()
 
         for defect_type in defect_types:
             if defect_type == 'good':
