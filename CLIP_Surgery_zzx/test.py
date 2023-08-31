@@ -62,7 +62,8 @@ def test(model_text,
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
         features = image_features @ text_features.t()
         # calculate anomaly map
-        normality_and_abnormality_score = features[:, 1:, :].softmax(dim=-1)
+        # normality_and_abnormality_score = features[:, 1:, :].softmax(dim=-1)
+        normality_and_abnormality_score = (100*features[:, 1:, :]).softmax(dim=-1)
         normality_and_abnormality_score = normality_and_abnormality_score.reshape(normality_and_abnormality_score.shape[0], int(normality_and_abnormality_score.shape[1] ** 0.5), int(normality_and_abnormality_score.shape[1] ** 0.5), -1)
         
         normality_and_abnormality_score = normality_and_abnormality_score.permute(0, 3, 1, 2)

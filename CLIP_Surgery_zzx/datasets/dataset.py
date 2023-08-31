@@ -44,10 +44,11 @@ class CLIPDataset(Dataset):
 
     def __getitem__(self, idx):
         img_path, gt, label, img_type = self.img_paths[idx], self.gt_paths[idx], self.labels[idx], self.types[idx]
-        # img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        pil_img = Image.open(img_path).convert('RGB')
-        img = self.preprocess(pil_img)
-        # cv2_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+        cv2_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        img = self.preprocess(Image.fromarray(cv2_img))
+        
+        # pil_img = Image.open(img_path).convert('RGB')
+        # img = self.preprocess(pil_img)
 
         if gt == 0:
             gt = np.zeros([img.shape[-2], img.shape[-1]])

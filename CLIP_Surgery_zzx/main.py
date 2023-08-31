@@ -44,8 +44,8 @@ def run_winclip(classname, args):
     model = model.to(device)
     model_text = TextCLIP(model)
     model_image = ImageCLIP(model)
-    model_text = torch.nn.DataParallel(model_text)
-    model_image = torch.nn.DataParallel(model_image)
+    # model_text = torch.nn.DataParallel(model_text)
+    # model_image = torch.nn.DataParallel(model_image)
     model_image.eval()
     model_text.eval()
 
@@ -82,7 +82,7 @@ def get_args():
     parser.add_argument('--img-cropsize', type=int, default=240)
     parser.add_argument('--resolution', type=int, default=240)  # was 400
 
-    parser.add_argument('--batch-size', type=int, default=1)
+    parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--vis', type=bool, choices=[True, False], default=True)
     parser.add_argument("--root-dir", type=str, default="result_clipSurgery")
     parser.add_argument("--load-memory", type=bool, default=True)
