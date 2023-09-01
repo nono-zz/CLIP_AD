@@ -24,11 +24,15 @@ def test(model_text,
          class_name: str,
          cal_pro: bool,
          train_data: DataLoader,
-         resolution: int):
+         resolution: int,
+         prompt_contrast: bool):
 
     logger.info('begin build text feature gallery...')
-    # text_features = encode_text_with_prompt_ensemble_anomaly(model_text, class_name, device)
-    text_features = encode_text_with_prompt_ensemble_anomaly_category(model_text, class_name, device)
+    if prompt_contrast:
+        text_features = encode_text_with_prompt_ensemble_anomaly_category(model_text, class_name, device)
+    else:
+        text_features = encode_text_with_prompt_ensemble_anomaly(model_text, class_name, device)
+        
     # model.build_text_feature_gallery(class_name)
     logger.info('build text feature gallery finished.')
 
@@ -59,27 +63,43 @@ def test(model_text,
         save_image(data[0], 'processed_sample_image.png')
         data = data.to(device)
         image_features = model_image(data)
-        # image_features = image_features / image_features.norm(dim=1, keepdim=True)
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-        features = image_features @ text_features.t()
-        # calculate anomaly map
-        # normality_and_abnormality_score = features[:, 1:, :].softmax(dim=-1)
-        normality_and_abnormality_score = (100*features[:, 1:, :]).softmax(dim=-1)
-        normality_and_abnormality_score = normality_and_abnormality_score.reshape(normality_and_abnormality_score.shape[0], int(normality_and_abnormality_score.shape[1] ** 0.5), int(normality_and_abnormality_score.shape[1] ** 0.5), -1)
         
-        normality_and_abnormality_score = normality_and_abnormality_score.permute(0, 3, 1, 2)
-        normality_and_abnormality_score = torch.nn.functional.interpolate(normality_and_abnormality_score, data.shape[-2], mode='bilinear')
-        normality_and_abnormality_score = normality_and_abnormality_score.permute(0, 2, 3, 1)
-        normality_score = normality_and_abnormality_score[:, :, :, 0]
-        abnormality_score = normality_and_abnormality_score[:, :, :, 1]
+        normality_score_list = []
+        abnormality_score_list = []
+        case_similarity_map_list = []
+        for text_feature in text_features:
+            features = image_features @ text_feature.t()
+            # calculate anomaly map
+            # normality_and_abnormality_score = features[:, 1:, :].softmax(dim=-1)
+            normality_and_abnormality_score = (100*features[:, 1:, :]).softmax(dim=-1)
+            normality_and_abnormality_score = normality_and_abnormality_score.reshape(normality_and_abnormality_score.shape[0], int(normality_and_abnormality_score.shape[1] ** 0.5), int(normality_and_abnormality_score.shape[1] ** 0.5), -1)
+            
+            normality_and_abnormality_score = normality_and_abnormality_score.permute(0, 3, 1, 2)
+            normality_and_abnormality_score = torch.nn.functional.interpolate(normality_and_abnormality_score, data.shape[-2], mode='bilinear')
+            normality_and_abnormality_score = normality_and_abnormality_score.permute(0, 2, 3, 1)
+            normality_score = normality_and_abnormality_score[:, :, :, 0]
+            abnormality_score = normality_and_abnormality_score[:, :, :, 1]
+            
+            similarity_map = clip_zzx.get_similarity_map(features[:, 1:, :], data.shape[-2:])
+            similarity_map = similarity_map[:,:,:,1]
+
+            normality_score_list.append(normality_score)
+            abnormality_score_list.append(abnormality_score)
+            case_similarity_map_list.append(similarity_map)
+            
+        tot_normality_score = torch.stack(normality_score_list)
+        tot_normality_score = torch.mean(tot_normality_score,dim=0)
         
-        similarity_map = clip_zzx.get_similarity_map(features[:, 1:, :], data.shape[-2:])
-        similarity_map = similarity_map[:,:,:,1]
-        # for i in range(similarity_map.shape[0]):
-        #     similarity_map_list.append((similarity_map[i].detach().cpu().numpy() * 255).astype('uint8'))
-        for i in range(similarity_map.shape[0]):
-            similarity_map_list.append((similarity_map[i].detach().cpu().numpy() * 255).astype('uint8'))
-            normal_score_list.append((normality_score[i].detach().cpu().numpy() * 255).astype('uint8'))
+        tot_abnormality_score = torch.stack(abnormality_score_list)
+        tot_abnormality_score = torch.mean(tot_abnormality_score,dim=0)
+        
+        tot_similarity_map = torch.stack(case_similarity_map_list)
+        tot_similarity_map = torch.mean(tot_similarity_map,dim=0)
+            
+        for i in range(tot_similarity_map.shape[0]):
+            similarity_map_list.append((tot_similarity_map[i].detach().cpu().numpy() * 255).astype('uint8'))
+            normal_score_list.append((tot_normality_score[i].detach().cpu().numpy() * 255).astype('uint8'))
             abnormal_score_list.append((abnormality_score[i].detach().cpu().numpy() * 255).astype('uint8'))
         
             

@@ -28,7 +28,7 @@ def run_winclip(classname, args):
     model_dir, img_dir, logger_dir, model_name, csv_path = get_dir_from_args(**kwargs)
 
     # get device
-    if kwargs['use_cpu'] == 0:
+    if kwargs['use_cpu'] == 0:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
             # device = f"cuda:1"
         device = torch.device("cuda")
     else:
@@ -64,7 +64,7 @@ def run_winclip(classname, args):
     with torch.no_grad():
         metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
                 class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
-                resolution=kwargs['resolution'])
+                resolution=kwargs['resolution'], prompt_contrast=kwargs['prompt_contrast'])
     # for k, v in metrics.items():
     #     logger.info(f"{kwargs['class_name']}======={k}: {v:.2f}")
         
@@ -101,6 +101,7 @@ def get_args():
     parser.add_argument("--backbone", type=str, default="ViT-B/16",
                         choices=['ViT-B-16-plus-240', 'CS-ViT-B/16', 'ViT-B/16'])
     parser.add_argument("--pretrained_dataset", type=str, default="laion400m_e32")
+    parser.add_argument("--prompt_contrast", type=bool, default="True")
 
     parser.add_argument("--use-cpu", type=int, default=0)
 

@@ -166,7 +166,7 @@ def encode_text_with_prompt_ensemble_anomaly(model, category, device):
     text_features = torch.stack(text_features, dim=1).to(device).t()
     # apply softmax to text_features category
     # text_features = text_features.softmax(dim=0)
-    return text_features
+    return [text_features]
 
 
 def encode_text_with_prompt_ensemble_anomaly_category(model, category, device):
@@ -254,7 +254,6 @@ def encode_text_with_prompt_ensemble_anomaly_category(model, category, device):
         template_normal_text_features = model(template_normal_phrases)
         template_abnormal_text_features = model(template_anormal_phrases)
         
-        text_features = []
         template_normal_text_features /= template_normal_text_features.norm(dim=-1, keepdim=True)
         template_normal_text_features = template_normal_text_features.mean(dim=0)
         template_normal_text_features /= template_normal_text_features.norm()
@@ -266,7 +265,6 @@ def encode_text_with_prompt_ensemble_anomaly_category(model, category, device):
         template_abnormal_text_features /= template_abnormal_text_features.norm()
         template_text_features.append(template_abnormal_text_features)
         abnormal_text_features.append(template_abnormal_text_features)
-        
         
         
         template_text_features = torch.stack(template_text_features, dim=1).to(device).t()
