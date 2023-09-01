@@ -280,7 +280,8 @@ def encode_text_with_prompt_ensemble_anomaly_category(model, category, device):
     tot_abnormal_text_features = torch.cat(tot_abnormal_text_features, dim=0).to(device)
     # visualize the group of features
     # prompt_feature_visualize(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features)
-    prompt_feature_visualize_4_groups(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features)
+    centroid_normal_text_features, centroid_abnormal_text_features = centroid_feature_engineer(normal_text_features, abnormal_text_features)
+    prompt_feature_visualize_4_groups(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features)
     
     return text_features
 
@@ -325,7 +326,15 @@ def prompt_feature_visualize(group1_features, group2_features, tot_group1_featur
     plt.savefig("prompt_features_tSNE.png")
     
     
-def prompt_feature_visualize_4_groups(group1_features, group2_features, tot_group1_features=None, tot_group2_features=None):
+def prompt_feature_visualize_4_groups(
+        group1_features, 
+        group2_features, 
+        tot_group1_features=None, 
+        tot_group2_features=None, 
+        centroid_normal_text_features=None, 
+        centroid_abnormal_text_features=None
+    ):
+    
     group1_features = torch.stack(group1_features, dim=0)
     group2_features = torch.stack(group2_features, dim=0)
     group1_mean = torch.mean(group1_features, dim=0).unsqueeze(0)
@@ -337,12 +346,17 @@ def prompt_feature_visualize_4_groups(group1_features, group2_features, tot_grou
     tot_group1_features = tot_group1_features.detach().cpu().numpy()
     tot_group2_features = tot_group2_features.detach().cpu().numpy()
     
-    all_features_np = np.concatenate((group1_features_np, group2_features_np, tot_group1_features, tot_group2_features, group1_mean_np, group2_mean_np), axis=0)
+    all_features_np = np.concatenate((group1_features_np, group2_features_np, 
+                                      tot_group1_features, tot_group2_features, 
+                                      group1_mean_np, group2_mean_np,
+                                      centroid_normal_text_features, centroid_abnormal_text_features), 
+                                     axis=0)
 
     # Labels to differentiate the two groups (0 for group 1, 1 for group 2)
     labels = np.array([0] * group1_features_np.shape[0] + [1] * group2_features_np.shape[0] + 
                       [2] * tot_group1_features.shape[0] + [3] * tot_group2_features.shape[0] + 
-                      [4] * group1_mean_np.shape[0] + [5] * group2_mean_np.shape[0])
+                      [4] * group1_mean_np.shape[0] + [5] * group2_mean_np.shape[0] + 
+                      [6] * centroid_normal_text_features.shape[0] + [7] * centroid_abnormal_text_features.shape[0])
 
     # Perform t-SNE to get 2D embeddings
     tsne = TSNE(n_components=2, perplexity=30, n_iter=300)
@@ -355,6 +369,8 @@ def prompt_feature_visualize_4_groups(group1_features, group2_features, tot_grou
     tot_group2_embeddings = embeddings_2d[labels == 3]
     group1_mean_embeddings = embeddings_2d[labels == 4]
     group2_mean_embeddings = embeddings_2d[labels == 5]
+    group1_centroid_embeddings = embeddings_2d[labels == 6]
+    group2_centroid_embeddings = embeddings_2d[labels == 7]
     
     # Create a scatter plot with different colors for each group
     plt.scatter(group1_embeddings[:, 0], group1_embeddings[:, 1], label='Normal', c='b', marker='o')
@@ -363,6 +379,8 @@ def prompt_feature_visualize_4_groups(group1_features, group2_features, tot_grou
     plt.scatter(tot_group2_embeddings[:, 0], tot_group2_embeddings[:, 1], label='Anomaly Cluster Centroid', c='r',  marker='x')
     plt.scatter(group1_mean_embeddings[:, 0], group1_mean_embeddings[:, 1], label='Normal Centroid', c='g',  marker='x', linewidth=2, s=100)
     plt.scatter(group2_mean_embeddings[:, 0], group2_mean_embeddings[:, 1], label='Anomaly Centroid', c='k',  marker='x', linewidth=2, s=100)
+    plt.scatter(group1_centroid_embeddings[:, 0], group1_centroid_embeddings[:, 1], label='Anomaly Centroid', c='g',  marker='D', linewidth=2, s=100)
+    plt.scatter(group2_centroid_embeddings[:, 0], group2_centroid_embeddings[:, 1], label='Anomaly Centroid', c='k',  marker='D', linewidth=2, s=100)
     
     
     # for i in range(group1_embeddings.shape[0]):
@@ -375,4 +393,23 @@ def prompt_feature_visualize_4_groups(group1_features, group2_features, tot_grou
     plt.xlabel('Dimension 1')
     plt.ylabel('Dimension 2')
     plt.legend()
-    plt.savefig("prompt_features_tSNE_tot_mean.png")
+    plt.savefig("prompt_features_tSNE_tot_mean_centroid.png")
+    
+    
+def centroid_feature_engineer(normal_text_features, abnormal_text_features):
+    centroids_A = (torch.stack(normal_text_features, dim=0)).detach().cpu().numpy()
+    centroids_B = (torch.stack(abnormal_text_features, dim=0)).detach().cpu().numpy()
+
+    # Calculate pairwise distances
+    distances = np.linalg.norm(centroids_A[:, np.newaxis] - centroids_B, axis=2)
+    
+    # Calculate weights based on distances
+    weights_A = 1 / distances.sum(axis=1)
+    weights_B = 1 / distances.sum(axis=0)
+    
+    # Calculate weighted centroids
+    weighted_centroid_A = np.sum(centroids_A * weights_A[:, np.newaxis], axis=0)
+    weighted_centroid_B = np.sum(centroids_B * weights_B[:, np.newaxis], axis=0)
+    
+    return weighted_centroid_A.reshape(1, -1), weighted_centroid_B.reshape(1, -1)
+    
