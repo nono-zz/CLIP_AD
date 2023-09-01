@@ -8,7 +8,7 @@ from utils.csv_utils import *
 from utils.metrics import *
 from utils.training_utils import *
 from utils.eval_utils import *
-from model_inference import encode_text_with_prompt_ensemble_anomaly
+from model_inference import encode_text_with_prompt_ensemble_anomaly, encode_text_with_prompt_ensemble_anomaly_category
 
 from torchvision.utils import save_image
 
@@ -27,7 +27,8 @@ def test(model_text,
          resolution: int):
 
     logger.info('begin build text feature gallery...')
-    text_features = encode_text_with_prompt_ensemble_anomaly(model_text, class_name, device)
+    # text_features = encode_text_with_prompt_ensemble_anomaly(model_text, class_name, device)
+    text_features = encode_text_with_prompt_ensemble_anomaly_category(model_text, class_name, device)
     # model.build_text_feature_gallery(class_name)
     logger.info('build text feature gallery finished.')
 
@@ -82,7 +83,9 @@ def test(model_text,
             abnormal_score_list.append((abnormality_score[i].detach().cpu().numpy() * 255).astype('uint8'))
         
             
-    # test_imgs, scores, gt_mask_list = specify_resolution(test_imgs, scores, gt_mask_list, resolution=(resolution, resolution))
+    test_imgs, scores, gt_mask_list = specify_resolution(test_imgs, abnormal_score_list, gt_mask_list, resolution=(data.shape[-1], data.shape[-1]))
+    result_dict = metric_cal(np.array(scores), gt_list, gt_mask_list, cal_pro=cal_pro)
+    
     
     if is_vis:
         figure_dict = {
@@ -92,4 +95,4 @@ def test(model_text,
         }
         # plot_sample_cv2(names, test_imgs, {'WinClip': similarity_map_list}, gt_mask_list, save_folder=img_dir)
         plot_sample_cv2(names, test_imgs, figure_dict, gt_mask_list, save_folder=img_dir)
-    return
+    return result_dict
