@@ -229,6 +229,8 @@ def encode_text_with_prompt_ensemble_anomaly_category(model, category, device):
     text_features = []
     normal_text_features = []
     abnormal_text_features = []
+    tot_nomral_text_features = []
+    tot_abnormal_text_features = []
     # some categories can be renamed to generate better embedding
     #if category == 'grid':
     #    category  = 'chain-link fence'
@@ -254,6 +256,9 @@ def encode_text_with_prompt_ensemble_anomaly_category(model, category, device):
         template_normal_text_features = model(template_normal_phrases)
         template_abnormal_text_features = model(template_anormal_phrases)
         
+        tot_nomral_text_features.append(template_normal_text_features)
+        tot_abnormal_text_features.append(template_abnormal_text_features)
+        
         template_normal_text_features /= template_normal_text_features.norm(dim=-1, keepdim=True)
         template_normal_text_features = template_normal_text_features.mean(dim=0)
         template_normal_text_features /= template_normal_text_features.norm()
@@ -271,21 +276,25 @@ def encode_text_with_prompt_ensemble_anomaly_category(model, category, device):
         
         text_features.append(template_text_features)    
 
+    tot_nomral_text_features = torch.cat(tot_nomral_text_features, dim=0).to(device)
+    tot_abnormal_text_features = torch.cat(tot_abnormal_text_features, dim=0).to(device)
     # visualize the group of features
-    prompt_feature_visualize(normal_text_features, abnormal_text_features)
+    # prompt_feature_visualize(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features)
+    prompt_feature_visualize_4_groups(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features)
     
     return text_features
 
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import numpy as np
-def prompt_feature_visualize(group1_features, group2_features):
+def prompt_feature_visualize(group1_features, group2_features, tot_group1_features=None, tot_group2_features=None):
     group1_features = torch.stack(group1_features, dim=0)
     group2_features = torch.stack(group2_features, dim=0)
     group1_features_np = group1_features.detach().cpu().numpy()
     group2_features_np = group2_features.detach().cpu().numpy()
     
     all_features_np = np.concatenate((group1_features_np, group2_features_np), axis=0)
+
 
     # Labels to differentiate the two groups (0 for group 1, 1 for group 2)
     labels = np.array([0] * group1_features_np.shape[0] + [1] * group2_features_np.shape[0])
@@ -314,3 +323,56 @@ def prompt_feature_visualize(group1_features, group2_features):
     plt.ylabel('Dimension 2')
     plt.legend()
     plt.savefig("prompt_features_tSNE.png")
+    
+    
+def prompt_feature_visualize_4_groups(group1_features, group2_features, tot_group1_features=None, tot_group2_features=None):
+    group1_features = torch.stack(group1_features, dim=0)
+    group2_features = torch.stack(group2_features, dim=0)
+    group1_mean = torch.mean(group1_features, dim=0).unsqueeze(0)
+    group2_mean = torch.mean(group2_features, dim=0).unsqueeze(0)
+    group1_features_np = group1_features.detach().cpu().numpy()
+    group2_features_np = group2_features.detach().cpu().numpy()
+    group1_mean_np = group1_mean.detach().cpu().numpy()
+    group2_mean_np = group2_mean.detach().cpu().numpy()
+    tot_group1_features = tot_group1_features.detach().cpu().numpy()
+    tot_group2_features = tot_group2_features.detach().cpu().numpy()
+    
+    all_features_np = np.concatenate((group1_features_np, group2_features_np, tot_group1_features, tot_group2_features, group1_mean_np, group2_mean_np), axis=0)
+
+    # Labels to differentiate the two groups (0 for group 1, 1 for group 2)
+    labels = np.array([0] * group1_features_np.shape[0] + [1] * group2_features_np.shape[0] + 
+                      [2] * tot_group1_features.shape[0] + [3] * tot_group2_features.shape[0] + 
+                      [4] * group1_mean_np.shape[0] + [5] * group2_mean_np.shape[0])
+
+    # Perform t-SNE to get 2D embeddings
+    tsne = TSNE(n_components=2, perplexity=30, n_iter=300)
+    embeddings_2d = tsne.fit_transform(all_features_np)
+
+    # Separate the 2D embeddings back into two groups
+    group1_embeddings = embeddings_2d[labels == 0]
+    group2_embeddings = embeddings_2d[labels == 1]
+    tot_group1_embeddings = embeddings_2d[labels == 2]
+    tot_group2_embeddings = embeddings_2d[labels == 3]
+    group1_mean_embeddings = embeddings_2d[labels == 4]
+    group2_mean_embeddings = embeddings_2d[labels == 5]
+    
+    # Create a scatter plot with different colors for each group
+    plt.scatter(group1_embeddings[:, 0], group1_embeddings[:, 1], label='Normal', c='b', marker='o')
+    plt.scatter(group2_embeddings[:, 0], group2_embeddings[:, 1], label='Anomaly', c='r', marker='o')
+    plt.scatter(tot_group1_embeddings[:, 0], tot_group1_embeddings[:, 1], label='Normal Cluster Centroid', c='b',  marker='x')
+    plt.scatter(tot_group2_embeddings[:, 0], tot_group2_embeddings[:, 1], label='Anomaly Cluster Centroid', c='r',  marker='x')
+    plt.scatter(group1_mean_embeddings[:, 0], group1_mean_embeddings[:, 1], label='Normal Centroid', c='g',  marker='x', linewidth=2, s=100)
+    plt.scatter(group2_mean_embeddings[:, 0], group2_mean_embeddings[:, 1], label='Anomaly Centroid', c='k',  marker='x', linewidth=2, s=100)
+    
+    
+    # for i in range(group1_embeddings.shape[0]):
+    #     plt.arrow(group1_embeddings[i, 0], group1_embeddings[i, 1],
+    #             group2_embeddings[i, 0] - group1_embeddings[i, 0],
+    #             group2_embeddings[i, 1] - group1_embeddings[i, 1],
+    #             color='gray', alpha=0.5, width=0.005)
+    
+    plt.title('2D t-SNE Visualization of Prompt Feature Embeddings total')
+    plt.xlabel('Dimension 1')
+    plt.ylabel('Dimension 2')
+    plt.legend()
+    plt.savefig("prompt_features_tSNE_tot_mean.png")

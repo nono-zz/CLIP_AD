@@ -98,7 +98,7 @@ def get_args():
     parser.add_argument('--scales', nargs='+', type=tuple, default=(2, 3, 15)) 
     # parser.add_argument('--scales', nargs='+', type=int, default=(15))
     parser.add_argument('--attention_mode', type=str, choices=['vv', 'v', 'qkv'], default='v') 
-    parser.add_argument("--backbone", type=str, default="ViT-B/16",
+    parser.add_argument("--backbone", type=str, default="CS-ViT-B/16",
                         choices=['ViT-B-16-plus-240', 'CS-ViT-B/16', 'ViT-B/16'])
     parser.add_argument("--pretrained_dataset", type=str, default="laion400m_e32")
     parser.add_argument("--prompt_contrast", type=bool, default="True")
