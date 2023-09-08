@@ -32,7 +32,11 @@ def get_dir_from_args(root_dir, class_name, **kwargs):
     else:
         scales_string = "_".join(str(scale) for scale in kwargs['scales'])
     attention_string = kwargs['attention_mode']
-    exp_name = f"{kwargs['dataset']}-{scales_string}-{attention_string}"
+    promt_template_string = kwargs['prompt_mode']+'_promt'
+    exp_name = f"{kwargs['dataset']}-{scales_string}-{attention_string}-{promt_template_string}"
+    
+    if kwargs['sample_only']:
+        exp_name = exp_name + '-' + 'sample_only'
 
     # exp_name = f"{kwargs['dataset']}-{kwargs['k_shot']}"
 

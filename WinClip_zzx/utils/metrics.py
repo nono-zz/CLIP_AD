@@ -15,7 +15,7 @@ def calculate_max_f1(gt, scores):
     threshold = thresholds[index]
     return max_f1, threshold
 
-def metric_cal(scores, gt_list, gt_mask_list, cal_pro=False):
+def metric_cal(scores, gt_list, gt_mask_list, cal_pro=False, sample_only = False):
     # calculate image-level ROC AUC score
     img_scores = scores.reshape(scores.shape[0], -1).max(axis=1)
     gt_list = np.asarray(gt_list, dtype=int)
@@ -24,36 +24,39 @@ def metric_cal(scores, gt_list, gt_mask_list, cal_pro=False):
     print('INFO: image ROCAUC: %.3f' % (img_roc_auc))
 
     img_f1, img_threshold = calculate_max_f1(gt_list, img_scores)
+    
+    result_dict = {'i_roc': img_roc_auc * 100, 'i_f1': img_f1 * 100}
 
-    gt_mask = np.asarray(gt_mask_list, dtype=int)
-    pxl_f1, pxl_threshold = calculate_max_f1(gt_mask.flatten(), scores.flatten())
+    if not sample_only:
+        gt_mask = np.asarray(gt_mask_list, dtype=int)
+        pxl_f1, pxl_threshold = calculate_max_f1(gt_mask.flatten(), scores.flatten())
 
-    # calculate per-pixel level ROCAUC
-    fpr, tpr, _ = roc_curve(gt_mask.flatten(), scores.flatten())
-    per_pixel_rocauc = roc_auc_score(gt_mask.flatten(), scores.flatten())
+        # calculate per-pixel level ROCAUC
+        fpr, tpr, _ = roc_curve(gt_mask.flatten(), scores.flatten())
+        per_pixel_rocauc = roc_auc_score(gt_mask.flatten(), scores.flatten())
 
-    if cal_pro:
-        pro_auc_score = cal_pro_metric(gt_mask_list, scores, fpr_thresh=0.3)
-        # calculate max-f1 region
-        max_f1_region = calculate_max_f1_region(gt_mask_list, scores)
+        if cal_pro:
+            pro_auc_score = cal_pro_metric(gt_mask_list, scores, fpr_thresh=0.3)
+            # calculate max-f1 region
+            max_f1_region = calculate_max_f1_region(gt_mask_list, scores)
 
-    else:
-        pro_auc_score = 0
-        # calculate max-f1 region
-        max_f1_region = 0
+        else:
+            pro_auc_score = 0
+            # calculate max-f1 region
+            max_f1_region = 0
         
-    # calculate the gt anomaly/normal ratio: both image-level and pixel-level
-    i_ratio = gt_list.sum()/len(gt_list)
-    total_ones = 0
-    total_elements = 0
-    for array in gt_mask_list:
-        total_ones += np.sum(array == 1)
-        total_elements += array.size
-    p_ratio = total_ones / total_elements
-        
+        # calculate the gt anomaly/normal ratio: both image-level and pixel-level
+        i_ratio = gt_list.sum()/len(gt_list)
+        total_ones = 0
+        total_elements = 0
+        for array in gt_mask_list:
+            total_ones += np.sum(array == 1)
+            total_elements += array.size
+        p_ratio = total_ones / total_elements
+            
 
-    result_dict = {'i_roc': img_roc_auc * 100, 'p_roc': per_pixel_rocauc * 100, 'p_pro': pro_auc_score * 100,
-     'i_f1': img_f1 * 100, 'p_f1': pxl_f1 * 100, 'r_f1': max_f1_region * 100, 'a/n_i_ratio': i_ratio, 'a/n_p_ratio': p_ratio}
+        result_dict = {'i_roc': img_roc_auc * 100, 'p_roc': per_pixel_rocauc * 100, 'p_pro': pro_auc_score * 100,
+        'i_f1': img_f1 * 100, 'p_f1': pxl_f1 * 100, 'r_f1': max_f1_region * 100, 'a/n_i_ratio': i_ratio, 'a/n_p_ratio': p_ratio}
 
     return result_dict
 

@@ -9,6 +9,7 @@ from utils.metrics import *
 from utils.training_utils import *
 from utils.eval_utils import *
 
+from torchvision.utils import save_image
 
 def test(model,
          dataloader: DataLoader,
@@ -18,13 +19,15 @@ def test(model,
          class_name: str,
          cal_pro: bool,
          train_data: DataLoader,
-         resolution: int):
+         resolution: int,
+         sample_only: bool,
+         prompt_template_mode: str):
 
     # change the model into eval mode
     model.eval_mode()
 
     logger.info('begin build text feature gallery...')
-    model.build_text_feature_gallery(class_name)
+    model.build_text_feature_gallery(class_name, prompt_template_mode=prompt_template_mode)
     logger.info('build text feature gallery finished.')
 
     if train_data is not None:
@@ -59,6 +62,7 @@ def test(model,
             gt_list += [l]
             gt_mask_list += [m]
 
+        save_image(data[0], 'processed_sample_image.png')
         data = data.to(device)
         score = model(data)
         if isinstance(score, tuple):
@@ -69,28 +73,29 @@ def test(model,
             
     test_imgs, scores, gt_mask_list = specify_resolution(test_imgs, scores, gt_mask_list, resolution=(resolution, resolution))
     
-    resized_multi_scale_scores = []
-    if not len(multi_scale_scores)==0:
-        for multi_scale_score in multi_scale_scores:
-            resized_multi_scale_score = [cv2.resize(multi_scale_score[i], (resolution, resolution), interpolation=cv2.INTER_CUBIC) for i in range(multi_scale_score.shape[0])]
-            resized_multi_scale_scores.append(resized_multi_scale_score)
-    # transpose list to [3, 117]
-    array_data = np.array(resized_multi_scale_scores)
-    transposed_array = np.transpose(array_data, (1, 0, 2, 3))
+    if not sample_only:
+        resized_multi_scale_scores = []
+        if not len(multi_scale_scores)==0:
+            for multi_scale_score in multi_scale_scores:
+                resized_multi_scale_score = [cv2.resize(multi_scale_score[i], (resolution, resolution), interpolation=cv2.INTER_CUBIC) for i in range(multi_scale_score.shape[0])]
+                resized_multi_scale_scores.append(resized_multi_scale_score)
+        # transpose list to [3, 117]
+        array_data = np.array(resized_multi_scale_scores)
+        transposed_array = np.transpose(array_data, (1, 0, 2, 3))
     
         
-    result_dict = metric_cal(np.array(scores), gt_list, gt_mask_list, cal_pro=cal_pro)
+    result_dict = metric_cal(np.array(scores), gt_list, gt_mask_list, cal_pro=cal_pro, sample_only=sample_only)
 
-    if is_vis:
+    if is_vis and not sample_only:
         plot_sample_cv2(names, test_imgs, {'WinClip': scores}, gt_mask_list, save_folder=img_dir, multi_scale_scores=resized_multi_scale_scores)
         
-        if not len(multi_scale_scores)==0:
-            score_dict = {
-                'WinClip': scores,
-                'WinClip_scale_2': transposed_array[0],
-                'WinClip_scale_3': transposed_array[1],
-                'WinClip_scale_15': transposed_array[2],
-            }
-        plot_sample_cv2(names, test_imgs, score_dict, gt_mask_list, save_folder=img_dir, multi_scale_scores=resized_multi_scale_scores)
+        # if not len(multi_scale_scores)==0:
+        #     score_dict = {
+        #         'WinClip': scores,
+        #         'WinClip_scale_2': transposed_array[0],
+        #         'WinClip_scale_3': transposed_array[1],
+        #         'WinClip_scale_15': transposed_array[2],
+        #     }
+        # plot_sample_cv2(names, test_imgs, score_dict, gt_mask_list, save_folder=img_dir, multi_scale_scores=resized_multi_scale_scores)
 
     return result_dict

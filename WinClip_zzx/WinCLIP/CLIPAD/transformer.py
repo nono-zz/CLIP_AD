@@ -928,8 +928,8 @@ class WindowVisionTransformer(nn.Module):
             if self.output_tokens:
                 return pooled_list, tokens_list
 
-            # return pooled_list
-            return tokens_list
+            return pooled_list
+            # return tokens_list
 
                 
         elif self.use_pix_multi_scale_zzx == True:

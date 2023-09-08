@@ -90,7 +90,7 @@ class WinClipAD(torch.nn.Module):
         text_features = self.model.encode_text(text)
         return text_features
     
-    def build_text_feature_gallery(self, category: str):
+    def build_text_feature_gallery(self, category: str, prompt_template_mode: str='winclip'):
         normal_phrases = []
         abnormal_phrases = []
 
@@ -100,49 +100,91 @@ class WinClipAD(torch.nn.Module):
         #    category  = 'chain-link fence'
         #if category == 'toothbrush':
         #    category = 'brush' #'brush' #
-        for template_prompt in template_level_prompts:
-            # normal prompts
-            for normal_prompt in state_level_normal_prompts:
-                phrase = template_prompt.format(normal_prompt.format(category))
-                normal_phrases += [phrase]
+        if prompt_template_mode == 'winclip':
+            for template_prompt in template_level_prompts:
+                # normal prompts
+                for normal_prompt in state_level_normal_prompts:
+                    phrase = template_prompt.format(normal_prompt.format(category))
+                    normal_phrases += [phrase]
 
-            # abnormal prompts
-            for abnormal_prompt in state_level_abnormal_prompts:
-                phrase = template_prompt.format(abnormal_prompt.format(category))
-                abnormal_phrases += [phrase]
+                # abnormal prompts
+                for abnormal_prompt in state_level_abnormal_prompts:
+                    phrase = template_prompt.format(abnormal_prompt.format(category))
+                    abnormal_phrases += [phrase]
 
-        normal_phrases = self.tokenizer(normal_phrases).to(self.device)
-        abnormal_phrases = self.tokenizer(abnormal_phrases).to(self.device)
+            normal_phrases = self.tokenizer(normal_phrases).to(self.device)
+            abnormal_phrases = self.tokenizer(abnormal_phrases).to(self.device)
+
+            
+            if self.version == "V1":
+                normal_text_features = self.encode_text(normal_phrases)
+                abnormal_text_features = self.encode_text(abnormal_phrases)
+            elif self.version == "V2":
+                normal_text_features = []
+                for phrase_id in range(normal_phrases.size()[0]):
+                    normal_text_feature = self.encode_text(normal_phrases[phrase_id].unsqueeze(0))
+                    normal_text_feature = normal_text_feature/normal_text_feature.norm(dim=-1, keepdim=True)
+                    normal_text_features.append(normal_text_feature)
+                normal_text_features = torch.cat(normal_text_features, 0).half()
+                abnormal_text_features = []
+                for phrase_id in range(abnormal_phrases.size()[0]):
+                    abnormal_text_feature = self.encode_text(abnormal_phrases[phrase_id].unsqueeze(0))
+                    abnormal_text_feature = abnormal_text_feature/abnormal_text_feature.norm(dim=-1, keepdim=True)
+                    abnormal_text_features.append(abnormal_text_feature)
+                abnormal_text_features = torch.cat(abnormal_text_features, 0).half()
+            else:
+                raise NotImplementedError
+
+            avr_normal_text_features = torch.mean(normal_text_features, dim=0, keepdim=True)
+            avr_abnormal_text_features = torch.mean(abnormal_text_features, dim=0, keepdim=True)
+
+            self.avr_normal_text_features = avr_normal_text_features
+            self.avr_abnormal_text_features = avr_abnormal_text_features
+            self.text_features = torch.cat([self.avr_normal_text_features,
+                                            self.avr_abnormal_text_features], dim=0)
+            self.text_features /= self.text_features.norm(dim=-1, keepdim=True)
+        elif prompt_template_mode == 'hanqiu':
+            from .hanqiu_prompt import state_normal, state_anomaly, texture_list, inds_temp, text_temp, surf_temp, img_temp, mnf_temp, class_mapping
+            prompt_state = [state_normal, state_anomaly]
+            #prompt_templates = ['a bad photo of a {}.', 'a low resolution photo of the {}.', 'a bad photo of the {}.', 'a cropped photo of the {}.', 'a bright photo of a {}.', 'a dark photo of the {}.', 'a photo of my {}.', 'a photo of the cool {}.', 'a close-up photo of a {}.', 'a black and white photo of the {}.', 'a bright photo of the {}.', 'a cropped photo of a {}.', 'a jpeg corrupted photo of a {}.', 'a blurry photo of the {}.', 'a photo of the {}.', 'a good photo of the {}.', 'a photo of one {}.', 'a close-up photo of the {}.', 'a photo of a {}.', 'a low resolution photo of a {}.', 'a photo of a large {}.', 'a blurry photo of a {}.', 'a jpeg corrupted photo of the {}.', 'a good photo of a {}.', 'a photo of the small {}.', 'a photo of the large {}.', 'a black and white photo of a {}.', 'a dark photo of a {}.', 'a photo of a cool {}.', 'a photo of a small {}.', 'there is a {} in the scene.', 'there is the {} in the scene.', 'this is a {} in the scene.', 'this is the {} in the scene.', 'this is one {} in the scene.']
+
+            text_prompts = {}
+            text_prompts_list = {}
+            if category in texture_list:
+                prompt_templates = inds_temp+text_temp+surf_temp
+            else:
+                prompt_templates = inds_temp+img_temp+mnf_temp
+            text_features = []
+            text_features_list = []
+            #prompt_state[1] += class_state[obj]
+            for i in range(len(prompt_state)):
+                if category in class_mapping:
+                    prompted_state = [state.format(class_mapping[category]) for state in prompt_state[i]]
+                else:
+                    prompted_state = [state.format(category) for state in prompt_state[i]]
+                prompted_sentence = []
+                for template in prompt_templates:
+                    for s in prompted_state:
+                    #for template in prompt_templates:
+                        prompted_sentence.append(template.format(s))
+                prompted_sentence = self.tokenizer(prompted_sentence).to(self.device)
+                class_embeddings = self.encode_text(prompted_sentence)
+                class_embedding = class_embeddings.mean(dim=0)
+                class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
+                #class_embedding = class_embeddings.mean(dim=0)
+                class_embedding /= class_embedding.norm()
+                text_features.append(class_embedding)
+                text_features_list.append(class_embeddings)
+
+            text_features = torch.stack(text_features, dim=1)
+            text_features_list = torch.stack(text_features_list, dim=2)
+
+
+            self.text_features = text_features.T
+            
+            # return text_features_list
 
         
-        if self.version == "V1":
-            normal_text_features = self.encode_text(normal_phrases)
-            abnormal_text_features = self.encode_text(abnormal_phrases)
-        elif self.version == "V2":
-            normal_text_features = []
-            for phrase_id in range(normal_phrases.size()[0]):
-                normal_text_feature = self.encode_text(normal_phrases[phrase_id].unsqueeze(0))
-                normal_text_feature = normal_text_feature/normal_text_feature.norm(dim=-1, keepdim=True)
-                normal_text_features.append(normal_text_feature)
-            normal_text_features = torch.cat(normal_text_features, 0).half()
-            abnormal_text_features = []
-            for phrase_id in range(abnormal_phrases.size()[0]):
-                abnormal_text_feature = self.encode_text(abnormal_phrases[phrase_id].unsqueeze(0))
-                abnormal_text_feature = abnormal_text_feature/abnormal_text_feature.norm(dim=-1, keepdim=True)
-                abnormal_text_features.append(abnormal_text_feature)
-            abnormal_text_features = torch.cat(abnormal_text_features, 0).half()
-        else:
-            raise NotImplementedError
-
-        avr_normal_text_features = torch.mean(normal_text_features, dim=0, keepdim=True)
-        avr_abnormal_text_features = torch.mean(abnormal_text_features, dim=0, keepdim=True)
-
-        self.avr_normal_text_features = avr_normal_text_features
-        self.avr_abnormal_text_features = avr_abnormal_text_features
-        self.text_features = torch.cat([self.avr_normal_text_features,
-                                        self.avr_abnormal_text_features], dim=0)
-        self.text_features /= self.text_features.norm(dim=-1, keepdim=True)
-
     def build_image_feature_gallery(self, normal_images):
 
         self.visual_gallery = []
@@ -440,8 +482,8 @@ class WinClipAD(torch.nn.Module):
     def forward(self, images):
 
         visual_features = self.encode_image(images)
-        # textual_anomaly_map = self.calculate_textual_anomaly_score(visual_features)
-        textual_anomaly_maps = self.calculate_textual_anomaly_score_token(visual_features)
+        textual_anomaly_maps = self.calculate_textual_anomaly_score(visual_features)
+        # textual_anomaly_maps = self.calculate_textual_anomaly_score_token(visual_features)
         # textual_anomaly_map = self.calculate_textual_anomaly_score_zzx(visual_features)
         # textual_anomaly_map = self.calculate_textual_anomaly_score_zzx_2(visual_features)
         # textual_anomaly_map = self.calculate_textual_anomaly_score_zzx_3(visual_features)

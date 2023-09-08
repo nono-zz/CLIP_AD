@@ -188,7 +188,7 @@ class CLIP(nn.Module):
             quick_gelu: bool = False,
             cast_dtype: Optional[torch.dtype] = None,
             output_dict: bool = False,
-            scales: tuple=(2, 3),
+            scales: tuple=(15),
             attention_mode: str='qkv',
     ):
         super().__init__()

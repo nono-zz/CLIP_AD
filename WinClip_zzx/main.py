@@ -38,7 +38,9 @@ def run_winclip(classname, args):
     # evaluation
     metrics = test(model, test_dataloader, device, is_vis=True, img_dir=img_dir,
             class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
-            resolution=kwargs['resolution'])
+            resolution=kwargs['resolution'],
+            sample_only=kwargs['sample_only'],
+            prompt_template_mode = kwargs['prompt_mode'])
     for k, v in metrics.items():
         logger.info(f"{kwargs['class_name']}======={k}: {v:.2f}")
         
@@ -52,13 +54,13 @@ def get_args():
     parser.add_argument('--dataset', type=str, default='mvtec', choices=['mvtec', 'visa'])
     parser.add_argument('--class-name', type=str, default='bottle')
 
-    parser.add_argument('--img-resize', type=int, default=224)
-    parser.add_argument('--img-cropsize', type=int, default=224)
-    parser.add_argument('--resolution', type=int, default=224)  # was 400
+    # parser.add_argument('--img-resize', type=int, default=224)
+    # parser.add_argument('--img-cropsize', type=int, default=224)
+    # parser.add_argument('--resolution', type=int, default=224)  # was 400
     
-    # parser.add_argument('--img-resize', type=int, default=240)
-    # parser.add_argument('--img-cropsize', type=int, default=240)
-    # parser.add_argument('--resolution', type=int, default=240)  # wa
+    parser.add_argument('--img-resize', type=int, default=240)
+    parser.add_argument('--img-cropsize', type=int, default=240)
+    parser.add_argument('--resolution', type=int, default=240)  # wa
 
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--vis', type=bool, choices=[True, False], default=True)
@@ -74,11 +76,14 @@ def get_args():
     # method related parameters
     parser.add_argument('--k-shot', type=int, default=0)
     # parser.add_argument('--scales', nargs='+', type=tuple, default=(2, 3, 15)) 
-    parser.add_argument('--scales', nargs='+', type=int, default=(14))
-    parser.add_argument('--attention_mode', type=str, choices=['vv', 'v', 'qkv'], default='v') 
-    parser.add_argument("--backbone", type=str, default="ViT-B-16",
+    parser.add_argument('--scales', nargs='+', type=int, default=(15))
+    parser.add_argument('--attention_mode', type=str, choices=['vv', 'v', 'qkv'], default='qkv') 
+    parser.add_argument("--backbone", type=str, default="ViT-B-16-plus-240",
                         choices=['ViT-B-16-plus-240', 'ViT-B-16'])
     parser.add_argument("--pretrained_dataset", type=str, default="laion400m_e32", choices=['laion400m_e32', 'openai'])
+    parser.add_argument("--sample_only", type=bool, default=True)
+    parser.add_argument("--prompt_mode", type=str, default='hanqiu', choices=['hanqiu, winclip'])
+    
 
     parser.add_argument("--use-cpu", type=int, default=0)
 
