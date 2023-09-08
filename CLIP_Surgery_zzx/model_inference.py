@@ -150,7 +150,7 @@ def encode_text_with_prompt_ensemble_anomaly(model, category, device):
     abnormal_text_features = model(abnormal_phrases)
     
     # visualize the group of features
-    prompt_feature_visualize(normal_text_features, abnormal_text_features)
+    # prompt_feature_visualize(normal_text_features, abnormal_text_features)
     
     text_features = []
     normal_text_features /= normal_text_features.norm(dim=-1, keepdim=True)
@@ -169,7 +169,7 @@ def encode_text_with_prompt_ensemble_anomaly(model, category, device):
     return [text_features]
 
 
-def encode_text_with_prompt_ensemble_anomaly_category(model, category, device):
+def encode_text_with_prompt_ensemble_anomaly_category(model, category, device, prompt_engineer):
     
     template_level_prompts = [
         'a cropped photo of the {}',
@@ -283,7 +283,12 @@ def encode_text_with_prompt_ensemble_anomaly_category(model, category, device):
     centroid_normal_text_features, centroid_abnormal_text_features = centroid_feature_engineer(normal_text_features, abnormal_text_features)
     prompt_feature_visualize_4_groups(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features)
     
-    return text_features
+    if prompt_engineer == 'cluster':
+        return text_features
+    elif prompt_engineer == 'cluster_far':
+        centroid_text_features = [torch.from_numpy(centroid_normal_text_features),torch.from_numpy(centroid_abnormal_text_features)]
+        centroid_text_features = torch.cat(centroid_text_features, dim=0).to(device)
+        return [centroid_text_features]
 
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
@@ -377,10 +382,10 @@ def prompt_feature_visualize_4_groups(
     plt.scatter(group2_embeddings[:, 0], group2_embeddings[:, 1], label='Anomaly', c='r', marker='o')
     plt.scatter(tot_group1_embeddings[:, 0], tot_group1_embeddings[:, 1], label='Normal Cluster Centroid', c='b',  marker='x')
     plt.scatter(tot_group2_embeddings[:, 0], tot_group2_embeddings[:, 1], label='Anomaly Cluster Centroid', c='r',  marker='x')
-    plt.scatter(group1_mean_embeddings[:, 0], group1_mean_embeddings[:, 1], label='Normal Centroid', c='g',  marker='x', linewidth=2, s=100)
-    plt.scatter(group2_mean_embeddings[:, 0], group2_mean_embeddings[:, 1], label='Anomaly Centroid', c='k',  marker='x', linewidth=2, s=100)
-    plt.scatter(group1_centroid_embeddings[:, 0], group1_centroid_embeddings[:, 1], label='Anomaly Centroid', c='g',  marker='D', linewidth=2, s=100)
-    plt.scatter(group2_centroid_embeddings[:, 0], group2_centroid_embeddings[:, 1], label='Anomaly Centroid', c='k',  marker='D', linewidth=2, s=100)
+    plt.scatter(group1_mean_embeddings[:, 0], group1_mean_embeddings[:, 1], label='Normal Mean Centroid', c='g',  marker='x', linewidth=2, s=100)
+    plt.scatter(group2_mean_embeddings[:, 0], group2_mean_embeddings[:, 1], label='Anomaly Mean Centroid', c='k',  marker='x', linewidth=2, s=100)
+    plt.scatter(group1_centroid_embeddings[:, 0], group1_centroid_embeddings[:, 1], label='Normal Far Centroid', c='g',  marker='D', linewidth=2, s=100)
+    plt.scatter(group2_centroid_embeddings[:, 0], group2_centroid_embeddings[:, 1], label='Anomaly Far Centroid', c='k',  marker='D', linewidth=2, s=100)
     
     
     # for i in range(group1_embeddings.shape[0]):

@@ -25,13 +25,13 @@ def test(model_text,
          cal_pro: bool,
          train_data: DataLoader,
          resolution: int,
-         prompt_contrast: bool):
+         prompt_engineer: str):
 
     logger.info('begin build text feature gallery...')
-    if prompt_contrast:
-        text_features = encode_text_with_prompt_ensemble_anomaly_category(model_text, class_name, device)
-    else:
+    if prompt_engineer == 'mean':
         text_features = encode_text_with_prompt_ensemble_anomaly(model_text, class_name, device)
+    else:
+        text_features = encode_text_with_prompt_ensemble_anomaly_category(model_text, class_name, device, prompt_engineer)
         
     # model.build_text_feature_gallery(class_name)
     logger.info('build text feature gallery finished.')
