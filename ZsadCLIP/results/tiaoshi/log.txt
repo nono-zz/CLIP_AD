@@ -1,0 +1,242 @@
+23-09-06 16:18:28.147 - INFO: data_path: /home/zhaoxiang/ZsadCLIP/data/mvtec
+23-09-06 16:18:28.147 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 16:18:28.148 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 16:18:28.148 - INFO: dataset: mvtec
+23-09-06 16:18:28.148 - INFO: model: ViT-B-16-plus-240
+23-09-06 16:18:28.148 - INFO: pretrained: laion400m_e32
+23-09-06 16:18:28.148 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 16:18:28.148 - INFO: image_size: 240
+23-09-06 16:18:28.148 - INFO: mode: zero_shot
+23-09-06 16:18:28.148 - INFO: adapter: True
+23-09-06 16:18:28.148 - INFO: epoch: 5
+23-09-06 16:18:28.148 - INFO: seed: 111
+23-09-06 16:19:23.904 - INFO: data_path: /home/zhaoxiang/ZsadCLIP/data/mvtec
+23-09-06 16:19:23.905 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 16:19:23.905 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 16:19:23.905 - INFO: dataset: mvtec
+23-09-06 16:19:23.905 - INFO: model: ViT-B-16-plus-240
+23-09-06 16:19:23.905 - INFO: pretrained: laion400m_e32
+23-09-06 16:19:23.905 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 16:19:23.905 - INFO: image_size: 240
+23-09-06 16:19:23.905 - INFO: mode: zero_shot
+23-09-06 16:19:23.905 - INFO: adapter: True
+23-09-06 16:19:23.905 - INFO: epoch: 5
+23-09-06 16:19:23.905 - INFO: seed: 111
+23-09-06 16:21:06.219 - INFO: data_path: /home/zhaoxiang/ZsadCLIP/data/mvtec
+23-09-06 16:21:06.220 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 16:21:06.220 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 16:21:06.220 - INFO: dataset: mvtec
+23-09-06 16:21:06.220 - INFO: model: ViT-B-16-plus-240
+23-09-06 16:21:06.220 - INFO: pretrained: laion400m_e32
+23-09-06 16:21:06.220 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 16:21:06.220 - INFO: image_size: 240
+23-09-06 16:21:06.220 - INFO: mode: zero_shot
+23-09-06 16:21:06.220 - INFO: adapter: True
+23-09-06 16:21:06.220 - INFO: epoch: 5
+23-09-06 16:21:06.220 - INFO: seed: 111
+23-09-06 16:21:54.171 - INFO: data_path: /home/zhaoxiang/ZsadCLIP/data/mvtec
+23-09-06 16:21:54.172 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 16:21:54.172 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 16:21:54.172 - INFO: dataset: mvtec
+23-09-06 16:21:54.172 - INFO: model: ViT-B-16-plus-240
+23-09-06 16:21:54.172 - INFO: pretrained: laion400m_e32
+23-09-06 16:21:54.172 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 16:21:54.172 - INFO: image_size: 240
+23-09-06 16:21:54.172 - INFO: mode: zero_shot
+23-09-06 16:21:54.172 - INFO: adapter: True
+23-09-06 16:21:54.172 - INFO: epoch: 5
+23-09-06 16:21:54.172 - INFO: seed: 111
+23-09-06 16:23:38.577 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-06 16:23:38.577 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 16:23:38.577 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 16:23:38.577 - INFO: dataset: mvtec
+23-09-06 16:23:38.577 - INFO: model: ViT-B-16-plus-240
+23-09-06 16:23:38.577 - INFO: pretrained: laion400m_e32
+23-09-06 16:23:38.577 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 16:23:38.577 - INFO: image_size: 240
+23-09-06 16:23:38.577 - INFO: mode: zero_shot
+23-09-06 16:23:38.578 - INFO: adapter: True
+23-09-06 16:23:38.578 - INFO: epoch: 5
+23-09-06 16:23:38.578 - INFO: seed: 111
+23-09-06 16:24:37.275 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-06 16:24:37.275 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 16:24:37.275 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 16:24:37.275 - INFO: dataset: mvtec
+23-09-06 16:24:37.276 - INFO: model: ViT-B-16-plus-240
+23-09-06 16:24:37.276 - INFO: pretrained: laion400m_e32
+23-09-06 16:24:37.276 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 16:24:37.276 - INFO: image_size: 240
+23-09-06 16:24:37.276 - INFO: mode: zero_shot
+23-09-06 16:24:37.276 - INFO: adapter: True
+23-09-06 16:24:37.276 - INFO: epoch: 5
+23-09-06 16:24:37.276 - INFO: seed: 111
+23-09-06 17:45:25.974 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-06 17:45:25.975 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 17:45:25.975 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 17:45:25.975 - INFO: dataset: mvtec
+23-09-06 17:45:25.975 - INFO: model: ViT-B-16-plus-240
+23-09-06 17:45:25.975 - INFO: pretrained: laion400m_e32
+23-09-06 17:45:25.975 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 17:45:25.975 - INFO: image_size: 240
+23-09-06 17:45:25.975 - INFO: mode: zero_shot
+23-09-06 17:45:25.975 - INFO: adapter: True
+23-09-06 17:45:25.975 - INFO: epoch: 5
+23-09-06 17:45:25.975 - INFO: seed: 111
+23-09-06 18:12:31.840 - INFO: 
+| objects    |   auroc_px |   f1_px |   ap_px |   aupro |   auroc_sp |   f1_sp |   pr_sp |
+|:-----------|-----------:|--------:|--------:|--------:|-----------:|--------:|--------:|
+| bottle     |       91.9 |    53.6 |    55.9 |    78   |       97   |    97.6 |    99.2 |
+| cable      |       72   |    27   |    18.2 |    70   |       85.6 |    84.3 |    90.1 |
+| capsule    |       86.9 |    17.1 |     9.4 |    58.3 |       70.9 |    92.3 |    91.4 |
+| carpet     |       97.8 |    49.1 |    44.8 |    90.2 |       99.5 |    98.3 |    99.9 |
+| grid       |       96   |    22.9 |    15   |    88.5 |       99.8 |    99.1 |    99.9 |
+| hazelnut   |       94.6 |    34.5 |    27   |    78.8 |       92   |    88.1 |    95.9 |
+| leather    |       98.9 |    37.8 |    34.1 |    95.3 |      100   |   100   |   100   |
+| metal_nut  |       72.7 |    30.1 |    23.2 |    53.7 |       92.9 |    93.1 |    98.3 |
+| pill       |       80.6 |    19.5 |    14.6 |    72.1 |       83.7 |    91.6 |    96.6 |
+| screw      |       91.4 |    14   |     5.9 |    65.6 |       76.9 |    86.2 |    91.1 |
+| tile       |       91.1 |    51.4 |    44.3 |    72.7 |      100   |    99.4 |   100   |
+| toothbrush |       92.7 |    23.5 |    13   |    80.5 |       93.3 |    92.1 |    97.4 |
+| transistor |       75.6 |    31.9 |    23.1 |    54   |       87.2 |    81   |    87.1 |
+| wood       |       95.8 |    52.2 |    58.4 |    78.5 |       97.4 |    96   |    99.2 |
+| zipper     |       94.7 |    35.4 |    25.2 |    83.3 |       94   |    94.6 |    98.3 |
+| mean       |       88.9 |    33.3 |    27.5 |    74.6 |       91.4 |    92.9 |    96.3 |
+23-09-06 19:45:04.005 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-06 19:45:04.006 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 19:45:04.006 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 19:45:04.006 - INFO: dataset: mvtec
+23-09-06 19:45:04.006 - INFO: model: ViT-B-16-plus-240
+23-09-06 19:45:04.006 - INFO: pretrained: laion400m_e32
+23-09-06 19:45:04.007 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 19:45:04.007 - INFO: image_size: 240
+23-09-06 19:45:04.007 - INFO: mode: zero_shot
+23-09-06 19:45:04.007 - INFO: adapter: True
+23-09-06 19:45:04.007 - INFO: epoch: 5
+23-09-06 19:45:04.007 - INFO: seed: 111
+23-09-06 23:25:50.648 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-06 23:25:50.648 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 23:25:50.649 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 23:25:50.649 - INFO: dataset: mvtec
+23-09-06 23:25:50.649 - INFO: model: ViT-B-16-plus-240
+23-09-06 23:25:50.649 - INFO: pretrained: laion400m_e32
+23-09-06 23:25:50.649 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 23:25:50.649 - INFO: image_size: 240
+23-09-06 23:25:50.649 - INFO: mode: zero_shot
+23-09-06 23:25:50.649 - INFO: adapter: True
+23-09-06 23:25:50.649 - INFO: epoch: 5
+23-09-06 23:25:50.649 - INFO: seed: 111
+23-09-06 23:39:56.771 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-06 23:39:56.771 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 23:39:56.771 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 23:39:56.771 - INFO: dataset: mvtec
+23-09-06 23:39:56.772 - INFO: model: ViT-B-16-plus-240
+23-09-06 23:39:56.772 - INFO: pretrained: laion400m_e32
+23-09-06 23:39:56.772 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 23:39:56.772 - INFO: image_size: 240
+23-09-06 23:39:56.772 - INFO: mode: zero_shot
+23-09-06 23:39:56.772 - INFO: adapter: True
+23-09-06 23:39:56.772 - INFO: epoch: 5
+23-09-06 23:39:56.772 - INFO: seed: 111
+23-09-06 23:52:15.959 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-06 23:52:15.959 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-06 23:52:15.959 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-06 23:52:15.959 - INFO: dataset: mvtec
+23-09-06 23:52:15.959 - INFO: model: ViT-B-16-plus-240
+23-09-06 23:52:15.959 - INFO: pretrained: laion400m_e32
+23-09-06 23:52:15.959 - INFO: features_list: [3, 6, 9, 12]
+23-09-06 23:52:15.959 - INFO: image_size: 240
+23-09-06 23:52:15.959 - INFO: mode: zero_shot
+23-09-06 23:52:15.959 - INFO: visualize: False
+23-09-06 23:52:15.959 - INFO: adapter: False
+23-09-06 23:52:15.959 - INFO: epoch: 5
+23-09-06 23:52:15.959 - INFO: seed: 111
+23-09-06 23:58:25.013 - INFO: 
+| objects    |   auroc_px |   f1_px |   ap_px |   aupro |   auroc_sp |   f1_sp |   pr_sp |
+|:-----------|-----------:|--------:|--------:|--------:|-----------:|--------:|--------:|
+| bottle     |       90.9 |    53.2 |    54.6 |    75.7 |       97   |    97.6 |    99.2 |
+| cable      |       67.7 |    23   |    14.7 |    66.2 |       85.6 |    84.3 |    90.1 |
+| capsule    |       82.8 |    14.9 |     7.9 |    52.4 |       70.9 |    92.3 |    91.4 |
+| carpet     |       95.6 |    42.5 |    34.5 |    85.1 |       99.5 |    98.3 |    99.9 |
+| grid       |       95.7 |    22.3 |    14.5 |    87.1 |       99.8 |    99.1 |    99.9 |
+| hazelnut   |       93.8 |    32.5 |    25   |    75.6 |       92   |    88.1 |    95.9 |
+| leather    |       98.7 |    36.3 |    31.5 |    94.5 |      100   |   100   |   100   |
+| metal_nut  |       71.4 |    29.6 |    21.8 |    46.4 |       92.9 |    93.1 |    98.3 |
+| pill       |       79.5 |    18.4 |    13.7 |    69.8 |       83.7 |    91.6 |    96.6 |
+| screw      |       88.5 |    13.5 |     5.4 |    60.1 |       76.9 |    86.2 |    91.1 |
+| tile       |       77   |    35.9 |    27.7 |    54.3 |      100   |    99.4 |   100   |
+| toothbrush |       91.6 |    20.6 |    10.7 |    80.1 |       93.3 |    92.1 |    97.4 |
+| transistor |       75.6 |    24.6 |    18.5 |    50.8 |       87.2 |    81   |    87.1 |
+| wood       |       95.1 |    49.7 |    55.7 |    75.1 |       97.4 |    96   |    99.2 |
+| zipper     |       94.3 |    35.1 |    24.4 |    82.2 |       94   |    94.6 |    98.3 |
+| mean       |       86.6 |    30.1 |    24   |    70.4 |       91.4 |    92.9 |    96.3 |
+23-09-06 23:59:22.487 - INFO: 
+| objects    |   auroc_px |   f1_px |   ap_px |   aupro |   auroc_sp |   f1_sp |   pr_sp |
+|:-----------|-----------:|--------:|--------:|--------:|-----------:|--------:|--------:|
+| bottle     |       91.9 |    53.6 |    55.9 |    78   |       97   |    97.6 |    99.2 |
+| cable      |       72   |    27   |    18.2 |    70   |       85.6 |    84.3 |    90.1 |
+| capsule    |       86.9 |    17.1 |     9.4 |    58.3 |       70.9 |    92.3 |    91.4 |
+| carpet     |       97.8 |    49.1 |    44.8 |    90.2 |       99.5 |    98.3 |    99.9 |
+| grid       |       96   |    22.9 |    15   |    88.5 |       99.8 |    99.1 |    99.9 |
+| hazelnut   |       94.6 |    34.5 |    27   |    78.8 |       92   |    88.1 |    95.9 |
+| leather    |       98.9 |    37.8 |    34.1 |    95.3 |      100   |   100   |   100   |
+| metal_nut  |       72.7 |    30.1 |    23.2 |    53.7 |       92.9 |    93.1 |    98.3 |
+| pill       |       80.6 |    19.5 |    14.6 |    72.1 |       83.7 |    91.6 |    96.6 |
+| screw      |       91.4 |    14   |     5.9 |    65.6 |       76.9 |    86.2 |    91.1 |
+| tile       |       91.1 |    51.4 |    44.3 |    72.7 |      100   |    99.4 |   100   |
+| toothbrush |       92.7 |    23.5 |    13   |    80.5 |       93.3 |    92.1 |    97.4 |
+| transistor |       75.6 |    31.9 |    23.1 |    54   |       87.2 |    81   |    87.1 |
+| wood       |       95.8 |    52.2 |    58.4 |    78.6 |       97.4 |    96   |    99.2 |
+| zipper     |       94.7 |    35.4 |    25.2 |    83.3 |       94   |    94.6 |    98.3 |
+| mean       |       88.9 |    33.3 |    27.5 |    74.6 |       91.4 |    92.9 |    96.3 |
+23-09-07 00:02:42.081 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-07 00:02:42.082 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-07 00:02:42.082 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-07 00:02:42.082 - INFO: dataset: mvtec
+23-09-07 00:02:42.082 - INFO: model: ViT-B-16-plus-240
+23-09-07 00:02:42.083 - INFO: pretrained: laion400m_e32
+23-09-07 00:02:42.083 - INFO: features_list: [3, 6, 9, 12]
+23-09-07 00:02:42.083 - INFO: image_size: 240
+23-09-07 00:02:42.083 - INFO: mode: zero_shot
+23-09-07 00:02:42.083 - INFO: visualize: False
+23-09-07 00:02:42.083 - INFO: adapter: False
+23-09-07 00:02:42.083 - INFO: epoch: 5
+23-09-07 00:02:42.083 - INFO: seed: 111
+23-09-08 14:05:33.653 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-08 14:05:33.654 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-08 14:05:33.654 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-08 14:05:33.654 - INFO: dataset: mvtec
+23-09-08 14:05:33.654 - INFO: model: ViT-B-16-plus-240
+23-09-08 14:05:33.654 - INFO: pretrained: laion400m_e32
+23-09-08 14:05:33.654 - INFO: features_list: [3, 6, 9, 12]
+23-09-08 14:05:33.655 - INFO: image_size: 240
+23-09-08 14:05:33.655 - INFO: mode: zero_shot
+23-09-08 14:05:33.655 - INFO: visualize: False
+23-09-08 14:05:33.655 - INFO: adapter: False
+23-09-08 14:05:33.655 - INFO: epoch: 5
+23-09-08 14:05:33.655 - INFO: seed: 111
+23-09-08 14:08:45.957 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-08 14:08:45.958 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-08 14:08:45.958 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-08 14:08:45.958 - INFO: dataset: mvtec
+23-09-08 14:08:45.958 - INFO: model: ViT-B-16-plus-240
+23-09-08 14:08:45.958 - INFO: pretrained: laion400m_e32
+23-09-08 14:08:45.958 - INFO: features_list: [3, 6, 9, 12]
+23-09-08 14:08:45.958 - INFO: image_size: 240
+23-09-08 14:08:45.959 - INFO: mode: zero_shot
+23-09-08 14:08:45.959 - INFO: visualize: False
+23-09-08 14:08:45.959 - INFO: adapter: False
+23-09-08 14:08:45.959 - INFO: epoch: 5
+23-09-08 14:08:45.959 - INFO: seed: 111
+23-09-08 14:44:31.761 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_anomaly_detection
+23-09-08 14:44:31.762 - INFO: save_path: /home/zhaoxiang/ZsadCLIP/results/tiaoshi
+23-09-08 14:44:31.762 - INFO: config_path: /home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-08 14:44:31.762 - INFO: dataset: mvtec
+23-09-08 14:44:31.762 - INFO: model: ViT-B-16-plus-240
+23-09-08 14:44:31.762 - INFO: pretrained: laion400m_e32
+23-09-08 14:44:31.762 - INFO: features_list: [3, 6, 9, 12]
+23-09-08 14:44:31.762 - INFO: image_size: 240
+23-09-08 14:44:31.762 - INFO: mode: zero_shot
+23-09-08 14:44:31.762 - INFO: visualize: False
+23-09-08 14:44:31.762 - INFO: adapter: False
+23-09-08 14:44:31.762 - INFO: epoch: 5
+23-09-08 14:44:31.763 - INFO: seed: 111
