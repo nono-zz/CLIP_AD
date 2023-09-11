@@ -58,6 +58,61 @@ def encode_text_with_prompt_ensemble(model, objs, tokenizer, device):
 
     return text_prompts, text_prompts_list
 
+
+import random
+import string
+
+def generate_random_word(length):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
+
+def encode_random_word_prompt(model, objs, tokenizer, device):
+    normal_prompt_template = '{} a {} photo {} of {} a {}'
+    anomaly_prompt_template = '{} a {} photo {} of {} a damaged {}'
+    
+    # add normal and abnormal state later
+    
+    # generate prompts in a loop
+    prompt_list = []
+    num_sentences = 100
+    for _ in range(num_sentences):
+        word1 = generate_random_word(random.randint(5, 10))
+        word2 = generate_random_word(random.randint(5, 10))
+        word3 = generate_random_word(random.randint(5, 10))
+        word4 = generate_random_word(random.randint(5, 10))
+        word5 = generate_random_word(random.randint(5, 10))
+
+        normal_prompt = normal_prompt_template.format(word1, word2, word3, word4, word5)
+        
+        word6 = generate_random_word(random.randint(5, 10))
+        word7 = generate_random_word(random.randint(5, 10))
+        word8 = generate_random_word(random.randint(5, 10))
+        word9 = generate_random_word(random.randint(5, 10))
+        word10 = generate_random_word(random.randint(5, 10))
+
+        anomaly_prompt = anomaly_prompt_template.format(word6, word7, word8, word9, word10)
+    
+    
+        prompt_list.append(normal_prompt)
+        prompt_list.append(anomaly_prompt)
+    
+    assert len(prompt_list) == num_sentences * 2
+    
+    # start tokenize and embed the text prompts
+    prompt_tokenized = tokenizer(prompt_list).to(device)
+    prompt_embeddings = model.encode_text(prompt_tokenized)
+    
+    # generate prompt gt list for classification
+    prompt_label_list = [0,1] * num_sentences
+    prompt_labels = torch.tensor(prompt_label_list).to(device)
+    
+    assert len(prompt_embeddings) == len(prompt_labels)
+    
+    return prompt_embeddings, prompt_labels
+    
+    
+    
+
 state_normal = [#"{}",
                 #"undamaged {}",
                 "normal {}",
