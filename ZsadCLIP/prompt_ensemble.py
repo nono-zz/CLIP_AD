@@ -63,10 +63,10 @@ import random
 import string
 
 def generate_random_word(length):
-    characters = string.ascii_letters + string.digits
+    characters = string.ascii_lowercase + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
 
-def encode_random_word_prompt(model, objs, tokenizer, device):
+def encode_random_word_prompt(model, objs, tokenizer, device, num_sentences):
     normal_prompt_template = '{} a {} photo {} of {} a {}'
     anomaly_prompt_template = '{} a {} photo {} of {} a damaged {}'
     
@@ -74,7 +74,6 @@ def encode_random_word_prompt(model, objs, tokenizer, device):
     
     # generate prompts in a loop
     prompt_list = []
-    num_sentences = 100
     for _ in range(num_sentences):
         word1 = generate_random_word(random.randint(5, 10))
         word2 = generate_random_word(random.randint(5, 10))
@@ -109,8 +108,7 @@ def encode_random_word_prompt(model, objs, tokenizer, device):
     assert len(prompt_embeddings) == len(prompt_labels)
     
     return prompt_embeddings, prompt_labels
-    
-    
+
     
 
 state_normal = [#"{}",

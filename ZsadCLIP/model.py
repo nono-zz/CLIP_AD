@@ -160,3 +160,42 @@ class LinearLayer(nn.Module):
                 B, C, H, W = tokens[i].shape
                 tokens[i] = self.fc[i](tokens[i].view(B, C, -1).permute(0, 2, 1).contiguous())
         return tokens
+
+
+class FNN(nn.Module):
+    def __init__(self, input_dim=640, hidden_dim=640, dropout_prob=0.5):
+        super(FNN, self).__init__()
+
+        # First linear layer with batch normalization, ReLU, and dropout
+        self.layer1 = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=dropout_prob)
+        )
+
+        # Second linear layer with batch normalization, ReLU, and dropout
+        self.layer2 = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=dropout_prob)
+        )
+
+        # Third linear layer with batch normalization, ReLU, and dropout
+        self.layer3 = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=dropout_prob)
+        )
+
+        # Output layer
+        self.output_layer = nn.Linear(hidden_dim, 1)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.output_layer(x)
+        return x

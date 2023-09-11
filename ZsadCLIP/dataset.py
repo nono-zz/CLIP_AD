@@ -159,3 +159,58 @@ class MVTecDataset(data.Dataset):
 		img_mask = [] if img_mask is None else img_mask
 		return {'img': img, 'img_mask': img_mask, 'cls_name': cls_name, 'anomaly': anomaly,
 				'img_path': os.path.join(self.root, img_path)}
+
+
+import random
+import string
+class RandomWordPrompt(data.Dataset):
+    def __init__(self, num_sentences, model, tokenizer, device, length_min=5, length_max=10):
+        self.num_sentences = num_sentences
+        self.model = model
+        self.tokenizer = tokenizer
+        self.device = device
+        self.length_min = length_min
+        self.length_max = length_max
+        
+    def generate_random_word(self, length):
+        characters = string.ascii_lowercase + string.digits
+        return ''.join(random.choice(characters) for _ in range(length))
+    
+    def __len__(self):
+        return self.num_sentences
+    
+    def generate_prompt(self):
+        normal_prompt_template = '{} a {} photo {} of {} a {}'
+        anomaly_prompt_template = '{} a {} photo {} of {} a damaged {}'
+        
+        prompt_list = []
+        
+        word1 = self.generate_random_word(random.randint(5, 10))
+        word2 = self.generate_random_word(random.randint(5, 10))
+        word3 = self.generate_random_word(random.randint(5, 10))
+        word4 = self.generate_random_word(random.randint(5, 10))
+        word5 = self.generate_random_word(random.randint(5, 10))
+        
+        word6 = self.generate_random_word(random.randint(5, 10))
+        word7 = self.generate_random_word(random.randint(5, 10))
+        word8 = self.generate_random_word(random.randint(5, 10))
+        word9 = self.generate_random_word(random.randint(5, 10))
+        word10 = self.generate_random_word(random.randint(5, 10))
+	
+        normal_prompt = normal_prompt_template.format(word1, word2, word3, word4, word5)
+        anomaly_prompt = anomaly_prompt_template.format(word6, word7, word8, word9, word10)
+        
+        prompt_list.append(normal_prompt)
+        prompt_list.append(anomaly_prompt)
+        
+        prompt_tokenized = self.tokenizer(prompt_list).to(self.device)
+        prompt_embeddings = self.model.encode_text(prompt_tokenized)
+        
+        prompt_label_list = [0,1]
+        prompt_labels = torch.tensor(prompt_label_list).to(self.device)
+        prompt_labels = prompt_labels.to(prompt_embeddings.dtype)
+        return prompt_embeddings, prompt_labels
+    
+    def __getitem__(self, idx):
+        prompt_embeddings, prompt_labels = self.generate_prompt()
+        return prompt_embeddings, prompt_labels
