@@ -447,8 +447,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("VAND Challenge", add_help=True)
     # paths
     parser.add_argument("--data_path", type=str, default="/home/zhaoxiang/dataset/mvtec_anomaly_detection", help="path to test dataset")
-    parser.add_argument("--save_path", type=str, default='/home/zhaoxiang/ZsadCLIP/results/tiaoshi', help='path to save results')
-    parser.add_argument("--config_path", type=str, default='/home/zhaoxiang/ZsadCLIP/open_clip/model_configs/ViT-B-16.json', help="model configs")
+    parser.add_argument("--save_path", type=str, default='/home/zhaoxiang/CLIP_AD/ZsadCLIP/results/tiaoshi', help='path to save results')
+    parser.add_argument("--config_path", type=str, default='/home/zhaoxiang/CLIP_AD/ZsadCLIP/open_clip/model_configs/ViT-B-16.json', help="model configs")
     # model
     parser.add_argument("--dataset", type=str, default='mvtec', help="test dataset")
     parser.add_argument("--model", type=str, default="ViT-B-16-plus-240", help="model used")

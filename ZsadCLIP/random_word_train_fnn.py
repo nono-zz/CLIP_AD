@@ -215,7 +215,7 @@ def test(args):
 
         # define hyperparameters
         batch_size = 64
-        epochs = 10
+        epochs = 2
         learning_rate = 1e-3
         weight_decay = 1e-4
         
@@ -296,14 +296,76 @@ def test(args):
         results['imgs_masks'].append(gt_mask)  # px
         results['gt_sp'].append(items['anomaly'].item())
 
-        #Adapter
         with torch.no_grad():
             image_features, patch_tokens = model.encode_image(image, features_list)
         with torch.autograd.set_detect_anomaly(True):           # easier debug
 
+            # image auroc
             text_probs = fnn(image_features[:,0,:])
             text_probs = torch.sigmoid(text_probs)
-            results['pr_sp'].append(text_probs[0][0].cpu().item())          # prediction per
+            results['pr_sp'].append(text_probs[0][0].cpu().item())
+            
+            # pixel auroc
+            with torch.no_grad():
+                patch_tokens_ln = linearlayer(patch_tokens)
+            
+            for layer in range(len(patch_tokens_ln)):
+                if layer != 6:
+                    continue
+                
+                tokens = patch_tokens_ln[layer].squeeze(0)
+                # tokens = resize_tokens(patch_tokens_ln[layer])
+                # tokens = tokens/tokens.norm(dim=-1, keepdim=True)
+                
+                # anomaly_map = (tokens @ text_features)
+                # input patch token directly into the FNN
+                anomaly_map = fnn(tokens)       # shape [225, 1]
+                anomaly_map = torch.sigmoid(anomaly_map)
+                N, C = anomaly_map.shape
+                anomaly_map = anomaly_map.reshape(-1, C, int(N ** 0.5), int(N**0.5))
+                
+                anomaly_map = F.interpolate(anomaly_map,
+                                            size=img_size, mode='bilinear', align_corners=True)
+
+                anomaly_map = anomaly_map[0].cpu().detach().numpy()
+
+            results['anomaly_maps'].append(anomaly_map)
+            
+            # pixel visualization
+            path = items['img_path']
+            cls = path[0].split('/')[-2]
+            filename = path[0].split('/')[-1]
+            vis = cv2.cvtColor(cv2.resize(cv2.imread(path[0]), (anomaly_map.shape[-1], anomaly_map.shape[-2])), cv2.COLOR_BGR2RGB)  # RGB
+            vis = vis#[18:-18,18:-18]
+            size = anomaly_map[0].shape
+            mask = anomaly_map[0]#[18:-18,18:-18]
+            #mask = cv2.resize(mask,size)
+            mask = normalize(mask)
+            p, r, th = precision_recall_curve(gt_mask.ravel(), mask.ravel())
+            f1_score = (2 * p * r) / (p + r)
+            opt_th = th[np.argmax(f1_score)]
+            binary_mask = np.copy(mask)
+            binary_mask[binary_mask>=opt_th]=1
+            binary_mask[binary_mask<opt_th]=0
+            #mask = cv2.resize(mask,size)
+            #mask = normalize(mask)
+            #mask = cv2.copyMakeBorder(mask,16,16,16,16,cv2.BORDER_CONSTANT, value=(0,0,0))
+            crop_vis = apply_ad_bmap(vis, mask*binary_mask)
+            vis = apply_ad_scoremap(vis, mask)
+            vis = cv2.cvtColor(vis, cv2.COLOR_RGB2BGR)  # BGR
+            crop_vis = cv2.cvtColor(crop_vis, cv2.COLOR_RGB2BGR)  # BGR
+            save_vis = os.path.join(save_path, 'imgs', cls_name[0], cls)
+            if not os.path.exists(save_vis):
+                os.makedirs(save_vis)
+
+
+            # save the visualized results
+            if args.visualize:
+                cv2.imwrite(os.path.join(save_vis, filename), vis)
+                cv2.imwrite(os.path.join(save_vis, "crop_"+filename), crop_vis)
+                cv2.imwrite(os.path.join(save_vis, "mask_"+filename), binary_mask*255)
+                cv2.imwrite(os.path.join(save_vis, "gt_"+filename), gt_mask[0,0].cpu().numpy()*255)
+            
 
 
     # metrics
@@ -325,20 +387,41 @@ def test(args):
         table.append(obj)
         for idxes in range(len(results['cls_names'])):
             if results['cls_names'][idxes] == obj:
+                gt_px.append(results['imgs_masks'][idxes].squeeze(1).numpy())
+                pr_px.append(results['anomaly_maps'][idxes])
                 gt_sp.append(results['gt_sp'][idxes])
                 pr_sp.append(results['pr_sp'][idxes])
                 #print(results['imgs_masks'][idxes].squeeze(1).numpy().shape)
+        gt_px = np.array(gt_px)
         gt_sp = np.array(gt_sp)
+        pr_px = np.array(pr_px)
         pr_sp = np.array(pr_sp)
 
+        auroc_px = roc_auc_score(gt_px.ravel(), pr_px.ravel())
         auroc_sp = roc_auc_score(gt_sp, pr_sp)
+        ap_px = average_precision_score(gt_px.ravel(), pr_px.ravel())
+        
         # f1_sp
         precisions, recalls, thresholds = precision_recall_curve(gt_sp, pr_sp)
         f1_scores = (2 * precisions * recalls) / (precisions + recalls)
         f1_sp = np.max(f1_scores[np.isfinite(f1_scores)])
         # aupr
         aupr_sp = auc(recalls, precisions)
+        # f1_px
+        precisions, recalls, thresholds = precision_recall_curve(gt_px.ravel(), pr_px.ravel())
+        f1_scores = (2 * precisions * recalls) / (precisions + recalls)
+        f1_px = np.max(f1_scores[np.isfinite(f1_scores)])
+        # aupro
+        if len(gt_px.shape) == 4:
+            gt_px = gt_px.squeeze(1)
+        if len(pr_px.shape) == 4:
+            pr_px = pr_px.squeeze(1)
+        # aupro = cal_pro_score(gt_px, pr_px)
         
+        table.append(str(np.round(auroc_px * 100, decimals=1)))
+        table.append(str(np.round(f1_px * 100, decimals=1)))
+        table.append(str(np.round(ap_px * 100, decimals=1)))
+        # table.append(str(np.round(aupro * 100, decimals=1)))
         table.append(str(np.round(auroc_sp * 100, decimals=1)))
         table.append(str(np.round(f1_sp * 100, decimals=1)))
         table.append(str(np.round(aupr_sp * 100, decimals=1)))
@@ -346,16 +429,30 @@ def test(args):
     
         table_ls.append(table)
         auroc_sp_ls.append(auroc_sp)
+        auroc_px_ls.append(auroc_px)
         f1_sp_ls.append(f1_sp)
+        f1_px_ls.append(f1_px)
+        # aupro_ls.append(aupro)
         ap_sp_ls.append(aupr_sp)
+        ap_px_ls.append(ap_px)
+    
     
     
     # logger
-    table_ls.append(['mean',
-                    str(np.round(np.mean(auroc_sp_ls) * 100, decimals=1)),
-                    str(np.round(np.mean(f1_sp_ls) * 100, decimals=1)), str(np.round(np.mean(ap_sp_ls) * 100, decimals=1))])
-    results = tabulate(table_ls, headers=['objects', 'auroc_sp',
-                                        'f1_sp', 'pr_sp'], tablefmt="pipe")
+    table_ls.append(['mean', str(np.round(np.mean(auroc_px_ls) * 100, decimals=1)),
+                     str(np.round(np.mean(f1_px_ls) * 100, decimals=1)), str(np.round(np.mean(ap_px_ls) * 100, decimals=1)),
+                     str(np.round(np.mean(auroc_sp_ls) * 100, decimals=1)),
+                     str(np.round(np.mean(f1_sp_ls) * 100, decimals=1)), str(np.round(np.mean(ap_sp_ls) * 100, decimals=1))])
+    results = tabulate(table_ls, headers=['objects', 'auroc_px', 'f1_px', 'ap_px', 'auroc_sp',
+                                          'f1_sp', 'pr_sp'], tablefmt="pipe")
+    
+    # # logger
+    # table_ls.append(['mean', str(np.round(np.mean(auroc_px_ls) * 100, decimals=1)),
+    #                  str(np.round(np.mean(f1_px_ls) * 100, decimals=1)), str(np.round(np.mean(ap_px_ls) * 100, decimals=1)),
+    #                  str(np.round(np.mean(aupro_ls) * 100, decimals=1)), str(np.round(np.mean(auroc_sp_ls) * 100, decimals=1)),
+    #                  str(np.round(np.mean(f1_sp_ls) * 100, decimals=1)), str(np.round(np.mean(ap_sp_ls) * 100, decimals=1))])
+    # results = tabulate(table_ls, headers=['objects', 'auroc_px', 'f1_px', 'ap_px', 'aupro', 'auroc_sp',
+    #                                       'f1_sp', 'pr_sp'], tablefmt="pipe")
     
     model_string = args.model
     dataset_string = args.dataset
@@ -364,8 +461,6 @@ def test(args):
     with open(result_txt_path, 'w') as file:
         file.write(results)
 
-
-    
     logger.info("\n%s", results)
 
 
@@ -384,11 +479,11 @@ if __name__ == '__main__':
     parser.add_argument("--few_shot_features", type=int, nargs="+", default=[3, 6, 9], help="features used for few shot")
     parser.add_argument("--image_size", type=int, default=240, help="image size")
     parser.add_argument("--mode", type=str, default="zero_shot", help="zero shot or few shot")
-    parser.add_argument("--visualize", type=bool, default=False, help="zero shot or few shot")
+    parser.add_argument("--visualize", type=bool, default=True, help="zero shot or few shot")
     parser.add_argument("--adapter", type=bool, default=False, help="adapter")
-    parser.add_argument("--epoch", type=int, default=5, help="epoch")
+    parser.add_argument("--epoch", type=int, default=2, help="epoch")
     parser.add_argument("--training", type=bool, default=True, help="epoch")
-    parser.add_argument("--multiple_states", type=bool, default=True, help="using multiple states or only one")
+    parser.add_argument("--multiple_states", type=bool, default=False, help="using multiple states or only one")
     # few shot
     parser.add_argument("--k_shot", type=int, default=10, help="e.g., 10-shot, 5-shot, 1-shot")
     parser.add_argument("--seed", type=int, default=111, help="random seed")
