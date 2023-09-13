@@ -164,13 +164,16 @@ class MVTecDataset(data.Dataset):
 import random
 import string
 class RandomWordPrompt(data.Dataset):
-    def __init__(self, num_sentences, model, tokenizer, device, length_min=5, length_max=10):
+    def __init__(self, num_sentences, model, tokenizer, device, args, length_min=5, length_max=10):
         self.num_sentences = num_sentences
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
         self.length_min = length_min
         self.length_max = length_max
+        self.args = args
+        self.normal_states = ['a', 'an', 'a normal', 'a good', 'a flawless', 'a perfect', 'a unblemished']
+        self.anomaly_states = ['a damaged', 'a borken', 'a defective', 'an anomalous', 'an imperfect', 'a blemished', 'an abnormal']
         
     def generate_random_word(self, length):
         characters = string.ascii_lowercase + string.digits
@@ -180,9 +183,17 @@ class RandomWordPrompt(data.Dataset):
         return self.num_sentences
     
     def generate_prompt(self):
-        normal_prompt_template = '{} a {} photo {} of {} a {}'
-        anomaly_prompt_template = '{} a {} photo {} of {} a damaged {}'
-        
+        # normal_prompt_template = '{} a {} photo {} of {} a {}'
+        if self.args.multiple_states:
+            normal_state = random.choice(self.normal_states)
+            abnormal_state = random.choice(self.anomaly_states)
+        else:
+            normal_state = 'a'
+            abnormal_state = 'a damaged'
+            
+        normal_prompt_template = '{} a {} photo {} of {} {} {}'
+        anomaly_prompt_template = '{} a {} photo {} of {} {} {}'
+    
         prompt_list = []
         
         word1 = self.generate_random_word(random.randint(5, 10))
@@ -197,8 +208,8 @@ class RandomWordPrompt(data.Dataset):
         word9 = self.generate_random_word(random.randint(5, 10))
         word10 = self.generate_random_word(random.randint(5, 10))
 	
-        normal_prompt = normal_prompt_template.format(word1, word2, word3, word4, word5)
-        anomaly_prompt = anomaly_prompt_template.format(word6, word7, word8, word9, word10)
+        normal_prompt = normal_prompt_template.format(word1, word2, word3, word4, normal_state, word5)
+        anomaly_prompt = anomaly_prompt_template.format(word6, word7, word8, word9, abnormal_state, word10)
         
         prompt_list.append(normal_prompt)
         prompt_list.append(anomaly_prompt)
