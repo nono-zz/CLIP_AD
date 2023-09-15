@@ -102,20 +102,29 @@ def run_winclip(classname, args):
                 '{} with damage',
             ]
             
-            
+            tot_word_pairs = ['{}-{}'.format(state_level_normal_prompts[i].replace('{}', ''), state_level_abnormal_prompts[i].replace('{}', '')) for i in range(len(state_level_abnormal_prompts))]
+            tot_word_pairs.append('mean')
             for idx in tqdm(range(len(state_level_abnormal_prompts))):
                 normal_word = state_level_normal_prompts[idx]
                 abnormal_word = state_level_abnormal_prompts[idx]
-                csv_path = csv_path.replace('.csv', '{}_{}_{}.csv'.format(classname ,normal_word.replace('{}', ''), abnormal_word.replace('{}', '')))
-                img_dir = os.path.join(img_dir, classname)
-                os.makedirs(img_dir, exist_ok=True)
+                # csv_path = csv_path.replace('.csv', '{}.csv'.format(classname))
+                category_csv_folder = os.path.join(os.path.dirname(csv_path), 'single_word')
+                category_csv_path = os.path.join(category_csv_folder, '{}.csv'.format(classname))
+                category_img_dir = os.path.join(img_dir, classname)
+                os.makedirs(category_img_dir, exist_ok=True)
+                os.makedirs(category_csv_folder, exist_ok=True)
 
-                metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
+                metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=category_img_dir,
                         class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
                         resolution=kwargs['resolution'], prompt_engineer=kwargs['prompt_engineer'], single_word=[normal_word, abnormal_word])
                 
-                save_metric(metrics, dataset_classes[kwargs['dataset']], kwargs['class_name'],
-                    kwargs['dataset'], csv_path)
+                save_metric(metrics, tot_word_pairs, '{}-{}'.format(normal_word.replace('{}', ''), abnormal_word.replace('{}', '')),
+                    kwargs['dataset'], category_csv_path)
+                
+            metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
+                class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
+                resolution=kwargs['resolution'], prompt_engineer=kwargs['prompt_engineer'])
+            save_metric(metrics, tot_word_pairs, 'mean', kwargs['dataset'], category_csv_path)
     return
     
 def get_args():
