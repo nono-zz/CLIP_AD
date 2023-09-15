@@ -426,7 +426,6 @@ def test(args):
         table.append(str(np.round(f1_sp * 100, decimals=1)))
         table.append(str(np.round(aupr_sp * 100, decimals=1)))
         
-    
         table_ls.append(table)
         auroc_sp_ls.append(auroc_sp)
         auroc_px_ls.append(auroc_px)

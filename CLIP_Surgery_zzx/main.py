@@ -6,6 +6,7 @@ from utils.training_utils import *
 # from WinCLIP import *
 # from utils.eval_utils import *
 from test import test
+from CLIP_AD.CLIP_Surgery_zzx.test_prompt_pair import test_analyse
 
 from model_inference import ImageCLIP, TextCLIP
 # specifically for clip surgery
@@ -62,9 +63,13 @@ def run_winclip(classname, args):
     
     # evaluation
     with torch.no_grad():
-        metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
-                class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
-                resolution=kwargs['resolution'], prompt_engineer=kwargs['prompt_engineer'])
+        # metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
+        #         class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
+        #         resolution=kwargs['resolution'], prompt_engineer=kwargs['prompt_engineer'])
+        if kwargs['search_prompt']:
+            metrics = test_analyse(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
+                    class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
+                    resolution=kwargs['resolution'], prompt_engineer=kwargs['prompt_engineer'])
     # for k, v in metrics.items():
     #     logger.info(f"{kwargs['class_name']}======={k}: {v:.2f}")
         
@@ -101,7 +106,9 @@ def get_args():
     parser.add_argument("--backbone", type=str, default="CS-ViT-B/16",
                         choices=['ViT-B-16-plus-240', 'CS-ViT-B/16', 'ViT-B/16'])
     parser.add_argument("--pretrained_dataset", type=str, default="laion400m_e32")
-    parser.add_argument("--prompt_engineer", type=str, default="cluster_far", choices=['cluster', 'mean', 'cluster_far'])
+    parser.add_argument("--prompt_engineer", type=str, default="mean", choices=['cluster', 'mean', 'cluster_far'])
+    parser.add_argument("--search_prompt", type=bool, default=True)
+    parser.add_argument("--single_word", type=str, default=None, choices = ['damaged', 'flawless'])
 
     parser.add_argument("--use-cpu", type=int, default=0)
 

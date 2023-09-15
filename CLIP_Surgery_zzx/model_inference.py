@@ -284,11 +284,140 @@ def encode_text_with_prompt_ensemble_anomaly_category(model, category, device, p
     prompt_feature_visualize_4_groups(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features)
     
     if prompt_engineer == 'cluster':
-        return text_features
+        return text_features, normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features
     elif prompt_engineer == 'cluster_far':
         centroid_text_features = [torch.from_numpy(centroid_normal_text_features),torch.from_numpy(centroid_abnormal_text_features)]
         centroid_text_features = torch.cat(centroid_text_features, dim=0).to(device)
-        return [centroid_text_features]
+        return [centroid_text_features], normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features
+    
+def encode_text_with_prompt_ensemble_anomaly_category_pair_contrast(model, category, device, prompt_engineer):
+    
+    template_level_prompts = [
+        'a cropped photo of the {}',
+        'a cropped photo of a {}',
+        'a close-up photo of a {}',
+        'a close-up photo of the {}',
+        'a bright photo of a {}',
+        'a bright photo of the {}',
+        'a dark photo of the {}',
+        'a dark photo of a {}',
+        'a jpeg corrupted photo of a {}',
+        'a jpeg corrupted photo of the {}',
+        'a blurry photo of the {}',
+        'a blurry photo of a {}',
+        'a photo of a {}',
+        'a photo of the {}',
+        'a photo of a small {}',
+        'a photo of the small {}',
+        'a photo of a large {}',
+        'a photo of the large {}',
+        'a photo of the {} for visual inspection',
+        'a photo of a {} for visual inspection',
+        'a photo of the {} for anomaly detection',
+        'a photo of a {} for anomaly detection'
+    ]
+    
+    state_level_normal_prompts = [
+        # '{}',
+        'flawless {}',
+        'perfect {}',
+        'good {}',
+        'undamaged {}',
+        'unbroken {}',
+        'unblemished {}',
+        '{} without flaw',
+        '{} without defect',
+        '{} without damage'
+        #'three flawless, perfect and unblemished {} with different colors without any defect, flaw or damage in a bowl',
+        #    'flawless, perfect and unblemished {} without any defect, flaw or damage'
+    ]
+
+    state_level_abnormal_prompts = [
+        #   'damaged {} with flaw or defect or damage',
+            'flawed {}',
+            'imperfect {}',
+            'bad {}',
+            'damaged {}',
+            'broken {}',
+            'blemished {}',
+            '{} with flaw',
+            '{} with defect',
+            '{} with damage',
+        ##   '{} with missing parts'
+        ##   '{} with print',  # added
+        ##    '{} with hole',  # added
+        ##   '{} with crack', # added
+        ##   '{} with scratch', # added
+        ##    '{} with discoloration',
+        ##    '{} with stains',
+        ##    '{} with missing parts',
+        ##    '{} with broken parts',
+        ##    '{} with bumpy surfaces'
+    ]
+
+    text_features = []
+    normal_text_features = []
+    abnormal_text_features = []
+    tot_nomral_text_features = []
+    tot_abnormal_text_features = []
+    # some categories can be renamed to generate better embedding
+    #if category == 'grid':
+    #    category  = 'chain-link fence'
+    #if category == 'toothbrush':
+    #    category = 'brush' #'brush' #
+    for template_prompt in template_level_prompts:
+        template_text_features = []
+        # normal prompts
+        template_normal_phrases = []
+        for normal_prompt in state_level_normal_prompts:
+            phrase = template_prompt.format(normal_prompt.format(category))
+            template_normal_phrases += [phrase]
+
+        # abnormal prompts
+        template_anormal_phrases = []
+        for abnormal_prompt in state_level_abnormal_prompts:
+            phrase = template_prompt.format(abnormal_prompt.format(category))
+            template_anormal_phrases += [phrase]
+
+        template_normal_phrases = tokenize(template_normal_phrases).to(device)
+        template_anormal_phrases = tokenize(template_anormal_phrases).to(device)
+    
+        template_normal_text_features = model(template_normal_phrases)
+        template_abnormal_text_features = model(template_anormal_phrases)
+        
+        tot_nomral_text_features.append(template_normal_text_features)
+        tot_abnormal_text_features.append(template_abnormal_text_features)
+        
+        template_normal_text_features /= template_normal_text_features.norm(dim=-1, keepdim=True)
+        template_normal_text_features = template_normal_text_features.mean(dim=0)
+        template_normal_text_features /= template_normal_text_features.norm()
+        template_text_features.append(template_normal_text_features)
+        normal_text_features.append(template_normal_text_features)
+        
+        template_abnormal_text_features /= template_abnormal_text_features.norm(dim=-1, keepdim=True)
+        template_abnormal_text_features = template_abnormal_text_features.mean(dim=0)
+        template_abnormal_text_features /= template_abnormal_text_features.norm()
+        template_text_features.append(template_abnormal_text_features)
+        abnormal_text_features.append(template_abnormal_text_features)
+        
+        
+        template_text_features = torch.stack(template_text_features, dim=1).to(device).t()
+        
+        text_features.append(template_text_features)    
+
+    tot_nomral_text_features = torch.cat(tot_nomral_text_features, dim=0).to(device)
+    tot_abnormal_text_features = torch.cat(tot_abnormal_text_features, dim=0).to(device)
+    # visualize the group of features
+    # prompt_feature_visualize(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features)
+    centroid_normal_text_features, centroid_abnormal_text_features = centroid_feature_engineer(normal_text_features, abnormal_text_features)
+    prompt_feature_visualize_4_groups(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features)
+    
+    if prompt_engineer == 'cluster':
+        return text_features, normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features
+    elif prompt_engineer == 'cluster_far':
+        centroid_text_features = [torch.from_numpy(centroid_normal_text_features),torch.from_numpy(centroid_abnormal_text_features)]
+        centroid_text_features = torch.cat(centroid_text_features, dim=0).to(device)
+        return [centroid_text_features], normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features
 
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
