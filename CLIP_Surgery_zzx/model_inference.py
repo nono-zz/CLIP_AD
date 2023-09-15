@@ -168,6 +168,76 @@ def encode_text_with_prompt_ensemble_anomaly(model, category, device):
     # text_features = text_features.softmax(dim=0)
     return [text_features]
 
+def encode_text_with_prompt_ensemble_anomaly_single_word(model, category, single_word, device):   
+    template_level_prompts = [
+        'a cropped photo of the {}',
+        'a cropped photo of a {}',
+        'a close-up photo of a {}',
+        'a close-up photo of the {}',
+        'a bright photo of a {}',
+        'a bright photo of the {}',
+        'a dark photo of the {}',
+        'a dark photo of a {}',
+        'a jpeg corrupted photo of a {}',
+        'a jpeg corrupted photo of the {}',
+        'a blurry photo of the {}',
+        'a blurry photo of a {}',
+        'a photo of a {}',
+        'a photo of the {}',
+        'a photo of a small {}',
+        'a photo of the small {}',
+        'a photo of a large {}',
+        'a photo of the large {}',
+        'a photo of the {} for visual inspection',
+        'a photo of a {} for visual inspection',
+        'a photo of the {} for anomaly detection',
+        'a photo of a {} for anomaly detection'
+    ]
+
+    normal_phrases = []
+    abnormal_phrases = []
+
+    # some categories can be renamed to generate better embedding
+    #if category == 'grid':
+    #    category  = 'chain-link fence'
+    #if category == 'toothbrush':
+    #    category = 'brush' #'brush' #
+    for template_prompt in template_level_prompts:
+        # normal prompts
+        phrase = template_prompt.format(single_word[0].format(category))
+        normal_phrases += [phrase]
+
+        # abnormal prompts
+        phrase = template_prompt.format(single_word[1].format(category))
+        abnormal_phrases += [phrase]
+
+    normal_phrases = tokenize(normal_phrases).to(device)
+    abnormal_phrases = tokenize(abnormal_phrases).to(device)
+    
+    normal_text_features = model(normal_phrases)
+    abnormal_text_features = model(abnormal_phrases)
+    
+    # visualize the group of features
+    # prompt_feature_visualize(normal_text_features, abnormal_text_features)
+    
+    text_features = []
+    normal_text_features /= normal_text_features.norm(dim=-1, keepdim=True)
+    normal_text_features = normal_text_features.mean(dim=0)
+    normal_text_features /= normal_text_features.norm()
+    text_features.append(normal_text_features)
+    
+    abnormal_text_features /= abnormal_text_features.norm(dim=-1, keepdim=True)
+    abnormal_text_features = abnormal_text_features.mean(dim=0)
+    abnormal_text_features /= abnormal_text_features.norm()
+    text_features.append(abnormal_text_features)
+    
+    text_features = torch.stack(text_features, dim=1).to(device).t()
+    # apply softmax to text_features category
+    # text_features = text_features.softmax(dim=0)
+    return [text_features]
+
+    
+
 
 def encode_text_with_prompt_ensemble_anomaly_category(model, category, device, prompt_engineer):
     
