@@ -29,7 +29,8 @@ def get_dataloader_from_args(phase, preprocess, **kwargs):
         phase=phase,
         k_shot=kwargs['k_shot'],
         preprocess=preprocess,
-        experiment_indx=kwargs['experiment_indx']
+        experiment_indx=kwargs['experiment_indx'], 
+        few_shot = kwargs['few_shot'],
     )
 
     if phase == 'train':

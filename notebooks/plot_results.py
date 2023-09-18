@@ -33,7 +33,7 @@ import os
 
 # csv_dir = '/home/zhaoxiang/CLIP_AD/WinClip_zzx/result_winclip/csv'
 csv_dir = '/home/zhaoxiang/CLIP_AD/CLIP_Surgery_zzx/result_clipSurgery/csv'
-csv_files = [os.path.join(csv_dir, csv_file) for csv_file in os.listdir(csv_dir)]
+csv_files = [os.path.join(csv_dir, csv_file) for csv_file in os.listdir(csv_dir) if os.path.isfile(os.path.join(csv_dir, csv_file)) and os.path.splitext(csv_file)[1] == ".csv"]
 
 plot_save_dir = csv_dir.replace('csv', 'plot')
 if not os.path.exists(plot_save_dir):

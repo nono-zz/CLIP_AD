@@ -36,9 +36,8 @@ def get_dir_from_args(root_dir, class_name, **kwargs):
     prompt_string = kwargs['prompt_engineer']
     search_prompt_string = 'pair' if kwargs['search_prompt'] else None
     single_word_string = 'single_word' if kwargs['single_word'] else None
-    exp_name = f"{kwargs['dataset']}-{backbone_string}-{prompt_string}-{scales_string}-{attention_string}-{search_prompt_string}-{single_word_string}"
-
-    # exp_name = f"{kwargs['dataset']}-{kwargs['k_shot']}"
+    few_shot_string = 'fewshot' if kwargs['few_shot'] else None
+    exp_name = f"{kwargs['dataset']}-{backbone_string}-{prompt_string}-{scales_string}-{attention_string}-{search_prompt_string}-{single_word_string}-{few_shot_string}"
 
     csv_dir = os.path.join(root_dir, 'csv')
     csv_path = os.path.join(csv_dir, f"{exp_name}.csv")

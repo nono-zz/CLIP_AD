@@ -4,15 +4,17 @@ import cv2
 import numpy as np
 from torch.utils.data import Dataset
 from PIL import Image
+import random
 
 
 class CLIPDataset(Dataset):
     def __init__(self, load_function, category, phase, k_shot, preprocess,
-                 experiment_indx=0):
+                 experiment_indx=0, few_shot=None):
 
         self.load_function = load_function
         self.preprocess = preprocess
         self.phase = phase
+        self.few_shot = few_shot
 
         assert k_shot in [0, 1, 5, 10]
         assert experiment_indx in [0, 1, 2]
@@ -60,6 +62,17 @@ class CLIPDataset(Dataset):
         # img = cv2.resize(img, (1024, 1024))
 
         img_name = f'{self.category}-{img_type}-{os.path.basename(img_path[:-4])}'
-
-        # return img, gt, label, img_name, img_type
-        return img, gt, label, img_name, img_type
+        
+        if not self.few_shot:
+            return img, gt, label, img_name, img_type
+        else:
+            # load 1-shot normal_image as ref_img
+            train_img_folder = os.path.join(img_path.rsplit('/', 3)[0], 'train', 'good')
+            train_imgs = os.listdir(train_img_folder)
+            train_img_name = random.sample(train_imgs, 1)[0]
+            train_img_path = os.path.join(train_img_folder, train_img_name)
+            
+            train_cv2_img = cv2.imread(train_img_path, cv2.IMREAD_COLOR)
+            train_img = self.preprocess(Image.fromarray(train_cv2_img))
+            
+            return img, gt, label, img_name, img_type, train_img

@@ -8,14 +8,14 @@ from utils.csv_utils import *
 from utils.metrics import *
 from utils.training_utils import *
 from utils.eval_utils import *
-from model_inference import encode_text_with_prompt_ensemble_anomaly, encode_text_with_prompt_ensemble_anomaly_category, encode_text_with_prompt_ensemble_anomaly_category_pair_contrast
+from model_inference import encode_text_with_prompt_ensemble_anomaly, encode_text_with_prompt_ensemble_anomaly_category, encode_text_with_prompt_ensemble_anomaly_category_pair_contrast, encode_text_with_prompt_ensemble_anomaly_random_word
 
 from torchvision.utils import save_image
 from tqdm import tqdm
 
 import clip_zzx
 
-def test_analyse(model_text,
+def test_few_shot(model_text,
          model_image,
          preprocess,
          dataloader: DataLoader,
@@ -31,9 +31,11 @@ def test_analyse(model_text,
     logger.info('begin build text feature gallery...')
     if prompt_engineer == 'mean':
         text_features = encode_text_with_prompt_ensemble_anomaly(model_text, class_name, device)
-    else:
+    elif 'cluster' in prompt_engineer:
         # text_features, normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features = encode_text_with_prompt_ensemble_anomaly_category(model_text, class_name, device, prompt_engineer)
-        text_features, normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features = encode_text_with_prompt_ensemble_anomaly_category_pair_contrast(model_text, class_name, device, prompt_engineer)
+        text_features, normal_text_features, abnormal_text_features, tot_normal_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features = encode_text_with_prompt_ensemble_anomaly_category_pair_contrast(model_text, class_name, device, prompt_engineer)
+    elif prompt_engineer == 'random':
+        text_features = encode_text_with_prompt_ensemble_anomaly_random_word(model_text, class_name, device)
         
     # model.build_text_feature_gallery(class_name)
     logger.info('build text feature gallery finished.')
@@ -49,7 +51,7 @@ def test_analyse(model_text,
     normal_score_list = []
     abnormal_score_list = []
     # model = torch.nn.DataParallel(model, device_ids=[0, 1])
-    for (data, mask, label, name, img_type) in dataloader:
+    for (data, mask, label, name, img_type, ref_data) in dataloader:
 
         for d, n, l, m in zip(data, name, label, mask):
             test_imgs += [denormalization(d.cpu().numpy())]
@@ -61,10 +63,15 @@ def test_analyse(model_text,
             gt_list += [l]
             gt_mask_list += [m]
 
-        save_image(data[0], 'processed_sample_image.png')
         data = data.to(device)
         image_features = model_image(data)
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+        
+        # calculate the ref data
+        ref_data = ref_data[0].unsqueeze(0)
+        ref_data = ref_data.to(device)
+        ref_image_features = model_image(ref_data)
+        ref_image_features = ref_image_features / ref_image_features.norm(dim=-1, keepdim=True)
         
         normality_score_list = []
         abnormality_score_list = []
@@ -74,43 +81,43 @@ def test_analyse(model_text,
             
             '''Search for largest text prompt pairs
             '''
-            # image_features = image_features[:, 1:, :]        
-                
-            # normal_features = image_features @ tot_nomral_text_features.t()         # shape = [B, n^2, num_text_prompts]
-            # abnormal_features = image_features @ tot_abnormal_text_features.t() 
+            query_image_features = image_features[:, 1:, :]
+            ref_image_features = ref_image_features[:, 1:, :]
+            image_distance = ref_image_features - query_image_features
+            text_distance = tot_normal_text_features/tot_normal_text_features.norm(dim=-1, keepdim=True) - tot_abnormal_text_features/tot_abnormal_text_features.norm(dim=-1, keepdim=True)
             
-            # # Search maximum distance prompt pairs
-            # # distances = torch.norm(normal_features - abnormal_features, dim = (0, 1, 2))
-            # max_distances, max_distance_indices = torch.max(torch.norm(normal_features - abnormal_features, dim = 1), dim=1)
-            # normality_and_abnormality_features = torch.stack((normal_features[torch.arange(normal_features.shape[0]), :, max_distance_indices], abnormal_features[torch.arange(abnormal_features.shape[0]), :, max_distance_indices]), dim = -1)
+            # pick the text embedding with largest similarity            
+            distance_simm = image_distance @ text_distance.t()
+            distance_simm_tot = torch.sum(distance_simm, dim=1)
             
+            # largest_distance, largest_index = torch.max(distance_simm_tot, dim=1)
+            top_indices = torch.topk(distance_simm_tot, k=1).indices
             
-            '''Random search'''
-            # # Initialize variables to store the maximum distance and corresponding indices
-            # max_distance = -1
-            # max_distance_indices = None
-            # # choose the features based on the longest distance
-            # B, P, N = normal_features.shape
-            # _, _, A = abnormal_features.shape -1
-            # max_distance_indices = []
-            # normality_and_abnormality_features = torch.zeros([B, P, 2])
+            # retrieve the right text_embeddings
+            normal_pick_text_feature = tot_normal_text_features[top_indices]
+            abnormal_pick_text_feature = tot_abnormal_text_features[top_indices]
             
-            # logger.info("Find largest prompt pairs...")
-            # for i in tqdm(range(B)):
-            #     max_distance = -1
-            #     for j in range(N):
-            #         for k in range(A):
-            #             distance = torch.norm(normal_features[i, :, j] - abnormal_features[i, :, k])
-            #             if distance > max_distance:
-            #                 max_distance = distance
-            #                 # max_distance_indices.append([j, k])
-            #                 normality_and_abnormality_features[i, :, 0] = normal_features[i, :, j]
-            #                 normality_and_abnormality_features[i, :, 1] = abnormal_features[i, :, k]
-            # distances = torch.norm(normal_features.unsqueeze(-1) - abnormal_features.unsqueeze(-2), dim=(1,2,3))
+            normal_pick_text_feature /= normal_pick_text_feature.norm(dim=-1, keepdim=True)
+            normal_pick_mean_text_feature = torch.mean(normal_pick_text_feature, dim=1)
+            normal_pick_mean_text_feature /= normal_pick_mean_text_feature.norm(dim=-1, keepdim=True)
+            normal_pick_mean_text_feature = torch.mean(normal_pick_mean_text_feature, dim=0)
+            normal_pick_mean_text_feature /= normal_pick_mean_text_feature.norm(dim=-1, keepdim=True)
+            
+            abnormal_pick_text_feature /= abnormal_pick_text_feature.norm(dim=-1, keepdim=True)
+            abnormal_pick_mean_text_feature = torch.mean(abnormal_pick_text_feature, dim=1)
+            abnormal_pick_mean_text_feature /= abnormal_pick_mean_text_feature.norm(dim=-1, keepdim=True)
+            abnormal_pick_mean_text_feature = torch.mean(abnormal_pick_mean_text_feature, dim=0)
+            abnormal_pick_mean_text_feature /= abnormal_pick_mean_text_feature.norm(dim=-1, keepdim=True)
+            
+            pick_text_feature = torch.stack((normal_pick_mean_text_feature, abnormal_pick_mean_text_feature), dim=-1)
+            # calculate mean text features
+
+            
+            # compute normality and abnormality score
+            normality_and_abnormality_features = query_image_features @ pick_text_feature
      
             # calculate anomaly map
-            normality_and_abnormality_score = (100*features[:, 1:, :]).softmax(dim=-1)
-            # normality_and_abnormality_score = (30*normality_and_abnormality_features).softmax(dim=-1)
+            normality_and_abnormality_score = (100*normality_and_abnormality_features).softmax(dim=-1)
             normality_and_abnormality_score = normality_and_abnormality_score.reshape(normality_and_abnormality_score.shape[0], int(normality_and_abnormality_score.shape[1] ** 0.5), int(normality_and_abnormality_score.shape[1] ** 0.5), -1)
             
             normality_and_abnormality_score = normality_and_abnormality_score.permute(0, 3, 1, 2)
@@ -119,7 +126,7 @@ def test_analyse(model_text,
             normality_score = normality_and_abnormality_score[:, :, :, 0]
             abnormality_score = normality_and_abnormality_score[:, :, :, 1]
             
-            similarity_map = clip_zzx.get_similarity_map(features[:, 1:, :], data.shape[-2:])
+            similarity_map = clip_zzx.get_similarity_map(normality_and_abnormality_features, data.shape[-2:])
             similarity_map = similarity_map[:,:,:,1]
 
             normality_score_list.append(normality_score)

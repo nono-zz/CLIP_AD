@@ -8,7 +8,7 @@ from utils.csv_utils import *
 from utils.metrics import *
 from utils.training_utils import *
 from utils.eval_utils import *
-from model_inference import encode_text_with_prompt_ensemble_anomaly, encode_text_with_prompt_ensemble_anomaly_category, encode_text_with_prompt_ensemble_anomaly_single_word
+from model_inference import encode_text_with_prompt_ensemble_anomaly, encode_text_with_prompt_ensemble_anomaly_category, encode_text_with_prompt_ensemble_anomaly_single_word, encode_text_with_prompt_ensemble_anomaly_random_word
 
 from torchvision.utils import save_image
 
@@ -34,8 +34,10 @@ def test(model_text,
             text_features = encode_text_with_prompt_ensemble_anomaly(model_text, class_name, device)
         else:
             text_features = encode_text_with_prompt_ensemble_anomaly_single_word(model_text, class_name, single_word, device)
-    else:
+    elif 'cluster' in prompt_engineer:
         text_features, _ = encode_text_with_prompt_ensemble_anomaly_category(model_text, class_name, device, prompt_engineer)
+    elif prompt_engineer == 'random':
+        text_features = encode_text_with_prompt_ensemble_anomaly_random_word(model_text, class_name, device)
         
     # model.build_text_feature_gallery(class_name)
     logger.info('build text feature gallery finished.')

@@ -7,6 +7,7 @@ from utils.training_utils import *
 # from utils.eval_utils import *
 from test import test
 from test_prompt_pair import test_analyse
+from test_few_shot_prompt_search import test_few_shot
 
 from model_inference import ImageCLIP, TextCLIP
 # specifically for clip surgery
@@ -72,10 +73,28 @@ def run_winclip(classname, args):
             metrics = test_analyse(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
                     class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
                     resolution=kwargs['resolution'], prompt_engineer=kwargs['prompt_engineer'])
+            # metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
+            #     class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
+            #     resolution=kwargs['resolution'], prompt_engineer=kwargs['prompt_engineer'])
+            # save_metric(metrics, dataset_classes[kwargs['dataset']], kwargs['class_name'],
+            #     kwargs['dataset'], csv_path)
     # for k, v in metrics.items():
     #     logger.info(f"{kwargs['class_name']}======={k}: {v:.2f}")
         # save_metric(metrics, dataset_classes[kwargs['dataset']], kwargs['class_name'],
         #     kwargs['dataset'], csv_path)
+        elif kwargs['prompt_engineer']:
+            metrics = test(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
+                class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
+                resolution=kwargs['resolution'], prompt_engineer=kwargs['prompt_engineer'])
+            save_metric(metrics, dataset_classes[kwargs['dataset']], kwargs['class_name'],
+                kwargs['dataset'], csv_path)
+            
+        elif kwargs['few_shot']:
+            metrics = test_few_shot(model_text, model_image, preprocess, test_dataloader, device, is_vis=True, img_dir=img_dir,
+                    class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'], train_data=train_dataloader,
+                    resolution=kwargs['resolution'], prompt_engineer=kwargs['prompt_engineer'])
+            save_metric(metrics, dataset_classes[kwargs['dataset']], kwargs['class_name'],
+                    kwargs['dataset'], csv_path)
         
         elif kwargs['single_word']:
             state_level_normal_prompts = [
@@ -155,9 +174,10 @@ def get_args():
     parser.add_argument("--backbone", type=str, default="CS-ViT-B/16",
                         choices=['ViT-B-16-plus-240', 'CS-ViT-B/16', 'ViT-B/16'])
     parser.add_argument("--pretrained_dataset", type=str, default="laion400m_e32")
-    parser.add_argument("--prompt_engineer", type=str, default="mean", choices=['cluster', 'mean', 'cluster_far'])
+    parser.add_argument("--prompt_engineer", type=str, default="random", choices=['cluster', 'mean', 'cluster_far', 'random'])
     parser.add_argument("--search_prompt", type=bool, default=False)
-    parser.add_argument("--single_word", type=bool, default=True)
+    parser.add_argument("--single_word", type=bool, default=False)
+    parser.add_argument("--few_shot", type=bool, default=False)
 
     parser.add_argument("--use-cpu", type=int, default=0)
 

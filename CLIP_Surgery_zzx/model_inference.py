@@ -168,6 +168,122 @@ def encode_text_with_prompt_ensemble_anomaly(model, category, device):
     # text_features = text_features.softmax(dim=0)
     return [text_features]
 
+def generate_random_word(length):
+    characters = string.ascii_lowercase + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
+
+import random
+import string
+def encode_text_with_prompt_ensemble_anomaly_random_word(model, category, device):
+    
+    # template_level_prompts = [
+    #     'a cropped photo of the {}',
+    #     'a cropped photo of a {}',
+    #     'a close-up photo of a {}',
+    #     'a close-up photo of the {}',
+    #     'a bright photo of a {}',
+    #     'a bright photo of the {}',
+    #     'a dark photo of the {}',
+    #     'a dark photo of a {}',
+    #     'a jpeg corrupted photo of a {}',
+    #     'a jpeg corrupted photo of the {}',
+    #     'a blurry photo of the {}',
+    #     'a blurry photo of a {}',
+    #     'a photo of a {}',
+    #     'a photo of the {}',
+    #     'a photo of a small {}',
+    #     'a photo of the small {}',
+    #     'a photo of a large {}',
+    #     'a photo of the large {}',
+    #     'a photo of the {} for visual inspection',
+    #     'a photo of a {} for visual inspection',
+    #     'a photo of the {} for anomaly detection',
+    #     'a photo of a {} for anomaly detection'
+    # ]
+    
+    # state_level_normal_prompts = [
+    #     '{}',
+    #     'flawless {}',
+    #     'perfect {}',
+    #     'unblemished {}',
+    #     '{} without flaw',
+    #     '{} without defect',
+    #     '{} without damage'
+    #     #'three flawless, perfect and unblemished {} with different colors without any defect, flaw or damage in a bowl',
+    #     #    'flawless, perfect and unblemished {} without any defect, flaw or damage'
+    # ]
+
+    # state_level_abnormal_prompts = [
+    #     #   'damaged {} with flaw or defect or damage',
+    #         'damaged {}',
+    #         '{} with flaw',
+    #         '{} with defect',
+    #         '{} with damage',
+    #     ##   '{} with missing parts'
+    #     ##   '{} with print',  # added
+    #     ##    '{} with hole',  # added
+    #     ##   '{} with crack', # added
+    #     ##   '{} with scratch', # added
+    #     ##    '{} with discoloration',
+    #     ##    '{} with stains',
+    #     ##    '{} with missing parts',
+    #     ##    '{} with broken parts',
+    #     ##    '{} with bumpy surfaces'
+    # ]
+    normal_states = ['a', 'an', 'a normal', 'a good', 'a flawless', 'a perfect', 'a unblemished']
+    anomaly_states = ['a damaged', 'a borken', 'a defective', 'an anomalous', 'an imperfect', 'a blemished', 'an abnormal']
+    
+    normal_phrases = []
+    abnormal_phrases = []
+    
+    for i in range(10000):
+    
+        normal_state = random.choice(normal_states)
+        abnormal_state = random.choice(anomaly_states)
+        
+        normal_prompt_template = '{} a {} photo {} of {} {} {}'
+        anomaly_prompt_template = '{} a {} photo {} of {} {} {}'
+        
+        word1 = generate_random_word(random.randint(5, 10))
+        word2 = generate_random_word(random.randint(5, 10))
+        word3 = generate_random_word(random.randint(5, 10))
+        word4 = generate_random_word(random.randint(5, 10))
+        word5 = generate_random_word(random.randint(5, 10))
+        
+        word6 = generate_random_word(random.randint(5, 10))
+        word7 = generate_random_word(random.randint(5, 10))
+        word8 = generate_random_word(random.randint(5, 10))
+        word9 = generate_random_word(random.randint(5, 10))
+        word10 = generate_random_word(random.randint(5, 10))
+        
+        normal_prompt = normal_prompt_template.format(word1, word2, word3, word4, normal_state, word5)
+        anomaly_prompt = anomaly_prompt_template.format(word6, word7, word8, word9, abnormal_state, word10)
+
+        normal_phrases += [normal_prompt]
+        abnormal_phrases += [anomaly_prompt]
+
+    normal_phrases = tokenize(normal_phrases).to(device)
+    abnormal_phrases = tokenize(abnormal_phrases).to(device)
+
+    normal_text_features = model(normal_phrases)
+    abnormal_text_features = model(abnormal_phrases)
+
+    text_features = []
+    normal_text_features /= normal_text_features.norm(dim=-1, keepdim=True)
+    normal_text_features = normal_text_features.mean(dim=0)
+    normal_text_features /= normal_text_features.norm()
+    text_features.append(normal_text_features)
+
+    abnormal_text_features /= abnormal_text_features.norm(dim=-1, keepdim=True)
+    abnormal_text_features = abnormal_text_features.mean(dim=0)
+    abnormal_text_features /= abnormal_text_features.norm()
+    text_features.append(abnormal_text_features)
+
+    text_features = torch.stack(text_features, dim=1).to(device).t()
+    # apply softmax to text_features category
+    # text_features = text_features.softmax(dim=0)
+    return [text_features]
+
 def encode_text_with_prompt_ensemble_anomaly_single_word(model, category, single_word, device):   
     template_level_prompts = [
         'a cropped photo of the {}',
@@ -458,9 +574,10 @@ def encode_text_with_prompt_ensemble_anomaly_category_pair_contrast(model, categ
         tot_nomral_text_features.append(template_normal_text_features)
         tot_abnormal_text_features.append(template_abnormal_text_features)
         
-        template_normal_text_features /= template_normal_text_features.norm(dim=-1, keepdim=True)
+        # 暂时去掉normalization
+        # template_normal_text_features /= template_normal_text_features.norm(dim=-1, keepdim=True)
         template_normal_text_features = template_normal_text_features.mean(dim=0)
-        template_normal_text_features /= template_normal_text_features.norm()
+        # template_normal_text_features /= template_normal_text_features.norm()
         template_text_features.append(template_normal_text_features)
         normal_text_features.append(template_normal_text_features)
         
@@ -480,7 +597,7 @@ def encode_text_with_prompt_ensemble_anomaly_category_pair_contrast(model, categ
     # visualize the group of features
     # prompt_feature_visualize(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features)
     centroid_normal_text_features, centroid_abnormal_text_features = centroid_feature_engineer(normal_text_features, abnormal_text_features)
-    prompt_feature_visualize_4_groups(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features)
+    # prompt_feature_visualize_4_groups(normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features)
     
     if prompt_engineer == 'cluster':
         return text_features, normal_text_features, abnormal_text_features, tot_nomral_text_features, tot_abnormal_text_features, centroid_normal_text_features, centroid_abnormal_text_features
