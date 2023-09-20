@@ -230,8 +230,10 @@ def encode_text_with_prompt_ensemble_anomaly_random_word(model, category, device
     #     ##    '{} with broken parts',
     #     ##    '{} with bumpy surfaces'
     # ]
-    normal_states = ['a', 'an', 'a normal', 'a good', 'a flawless', 'a perfect', 'a unblemished']
-    anomaly_states = ['a damaged', 'a borken', 'a defective', 'an anomalous', 'an imperfect', 'a blemished', 'an abnormal']
+    # normal_states = ['a', 'an', 'a normal', 'a good', 'a flawless', 'a perfect', 'a unblemished']
+    # anomaly_states = ['a damaged', 'a borken', 'a defective', 'an anomalous', 'an imperfect', 'a blemished', 'an abnormal']
+    normal_states = ['a']
+    anomaly_states = ['a damaged']
     
     normal_phrases = []
     abnormal_phrases = []
