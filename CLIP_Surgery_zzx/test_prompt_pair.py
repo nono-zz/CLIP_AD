@@ -76,13 +76,13 @@ def test_analyse(model_text,
             '''
             # image_features = image_features[:, 1:, :]        
                 
-            # normal_features = image_features @ tot_nomral_text_features.t()         # shape = [B, n^2, num_text_prompts]
-            # abnormal_features = image_features @ tot_abnormal_text_features.t() 
+            normal_features = image_features @ tot_nomral_text_features.t()         # shape = [B, n^2, num_text_prompts]
+            abnormal_features = image_features @ tot_abnormal_text_features.t() 
             
-            # # Search maximum distance prompt pairs
-            # # distances = torch.norm(normal_features - abnormal_features, dim = (0, 1, 2))
-            # max_distances, max_distance_indices = torch.max(torch.norm(normal_features - abnormal_features, dim = 1), dim=1)
-            # normality_and_abnormality_features = torch.stack((normal_features[torch.arange(normal_features.shape[0]), :, max_distance_indices], abnormal_features[torch.arange(abnormal_features.shape[0]), :, max_distance_indices]), dim = -1)
+            # Search maximum distance prompt pairs
+            # distances = torch.norm(normal_features - abnormal_features, dim = (0, 1, 2))
+            max_distances, max_distance_indices = torch.max(torch.norm(normal_features - abnormal_features, dim = 1), dim=1)
+            normality_and_abnormality_features = torch.stack((normal_features[torch.arange(normal_features.shape[0]), :, max_distance_indices], abnormal_features[torch.arange(abnormal_features.shape[0]), :, max_distance_indices]), dim = -1)
             
             
             '''Random search'''
