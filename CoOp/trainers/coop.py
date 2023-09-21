@@ -191,8 +191,10 @@ class CustomCLIP(nn.Module):
         self.text_encoder = TextEncoder(clip_model)
         self.logit_scale = clip_model.logit_scale
         self.dtype = clip_model.dtype
+        self.sigmoid = nn.Sigmoid()
+        self.MSE = nn.MSELoss()
 
-    def forward(self, image):
+    def forward(self, image, true_labels):
         image_features = self.image_encoder(image.type(self.dtype))
 
         prompts = self.prompt_learner()
@@ -202,10 +204,15 @@ class CustomCLIP(nn.Module):
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
-        logit_scale = self.logit_scale.exp()
-        logits = logit_scale * image_features @ text_features.t()
+        # logit_scale = self.logit_scale.exp()
+        # logits = logit_scale * image_features @ text_features.t()
+        logits = image_features @ text_features.t()
+        # true_labels = torch.ones([image_features.shape[0]], dtype=torch.float32).to(self.device)
+        # logits = self.sigmoid(logits)
+        true_labels = true_labels.type(image_features.dtype)
+        loss = self.MSE(logits, true_labels.unsqueeze(-1))
 
-        return logits
+        return loss
 
 
 @TRAINER_REGISTRY.register()
@@ -271,13 +278,15 @@ class CoOp_loco(TrainerX):
             self.scaler.step(self.optim)
             self.scaler.update()
         else:
-            output = self.model(image)
+            true_labels = torch.ones([image.shape[0]], dtype=image.dtype).to(self.device)
+            loss = self.model(image, true_labels)
+            # loss = nn.MSELoss
             # loss = F.cross_entropy(output, label)
             self.model_backward_and_update(loss)
 
         loss_summary = {
             "loss": loss.item(),
-            "acc": compute_accuracy(output, label)[0].item(),
+            # "acc": compute_accuracy(output, label)[0].item(),
         }
 
         if (self.batch_idx + 1) == self.num_batches:
