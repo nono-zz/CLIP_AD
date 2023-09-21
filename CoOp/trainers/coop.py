@@ -209,6 +209,124 @@ class CustomCLIP(nn.Module):
 
 
 @TRAINER_REGISTRY.register()
+class CoOp_loco(TrainerX):
+    """Context Optimization (CoOp).
+
+    Learning to Prompt for Vision-Language Models
+    https://arxiv.org/abs/2109.01134
+    """
+
+    def check_cfg(self, cfg):
+        assert cfg.TRAINER.COOP.PREC in ["fp16", "fp32", "amp"]
+
+    def build_model(self):
+        cfg = self.cfg
+        classnames = self.dm.dataset.classnames
+
+        print(f"Loading CLIP (backbone: {cfg.MODEL.BACKBONE.NAME})")
+        clip_model = load_clip_to_cpu(cfg)
+        
+        if cfg.TRAINER.COOP.PREC == "fp32" or cfg.TRAINER.COOP.PREC == "amp":
+            # CLIP's default precision is fp16
+            clip_model.float()
+
+        print("Building custom CLIP")
+        self.model = CustomCLIP(cfg, classnames, clip_model)
+
+        print("Turning off gradients in both the image and the text encoder")
+        for name, param in self.model.named_parameters():
+            if "prompt_learner" not in name:
+                param.requires_grad_(False)
+            elif "prompt_learner" in name:
+                print("updating prompt gradient status")
+
+        if cfg.MODEL.INIT_WEIGHTS:
+            load_pretrained_weights(self.model.prompt_learner, cfg.MODEL.INIT_WEIGHTS)
+
+        self.model.to(self.device)
+        # NOTE: only give prompt_learner to the optimizer
+        self.optim = build_optimizer(self.model.prompt_learner, cfg.OPTIM)
+        self.sched = build_lr_scheduler(self.optim, cfg.OPTIM)
+        self.register_model("prompt_learner", self.model.prompt_learner, self.optim, self.sched)
+
+        self.scaler = GradScaler() if cfg.TRAINER.COOP.PREC == "amp" else None
+
+        # Note that multi-gpu training could be slow because CLIP's size is
+        # big, which slows down the copy operation in DataParallel
+        # device_count = torch.cuda.device_count()
+        # if device_count > 1:
+        #     print(f"Multiple GPUs detected (n_gpus={device_count}), use all of them!")
+        #     self.model = nn.DataParallel(self.model)
+
+    def forward_backward(self, batch):
+        image, label = self.parse_batch_train(batch)
+        
+        prec = self.cfg.TRAINER.COOP.PREC
+        if prec == "amp":
+            with autocast():
+                output = self.model(image)
+                loss = F.cross_entropy(output, label)
+            self.optim.zero_grad()
+            self.scaler.scale(loss).backward()
+            self.scaler.step(self.optim)
+            self.scaler.update()
+        else:
+            output = self.model(image)
+            # loss = F.cross_entropy(output, label)
+            self.model_backward_and_update(loss)
+
+        loss_summary = {
+            "loss": loss.item(),
+            "acc": compute_accuracy(output, label)[0].item(),
+        }
+
+        if (self.batch_idx + 1) == self.num_batches:
+            self.update_lr()
+
+        return loss_summary
+
+    def parse_batch_train(self, batch):
+        input = batch[0]
+        label = batch[1]
+        input = input.to(self.device)
+        return input, label
+
+    def load_model(self, directory, epoch=None):
+        if not directory:
+            print("Note that load_model() is skipped as no pretrained model is given")
+            return
+
+        names = self.get_model_names()
+
+        # By default, the best model is loaded
+        model_file = "model-best.pth.tar"
+
+        if epoch is not None:
+            model_file = "model.pth.tar-" + str(epoch)
+
+        for name in names:
+            model_path = osp.join(directory, name, model_file)
+
+            if not osp.exists(model_path):
+                raise FileNotFoundError('Model not found at "{}"'.format(model_path))
+
+            checkpoint = load_checkpoint(model_path)
+            state_dict = checkpoint["state_dict"]
+            epoch = checkpoint["epoch"]
+
+            # Ignore fixed token vectors
+            if "token_prefix" in state_dict:
+                del state_dict["token_prefix"]
+
+            if "token_suffix" in state_dict:
+                del state_dict["token_suffix"]
+
+            print("Loading weights to {} " 'from "{}" (epoch = {})'.format(name, model_path, epoch))
+            # set strict=False
+            self._models[name].load_state_dict(state_dict, strict=False)
+
+
+@TRAINER_REGISTRY.register()
 class CoOp(TrainerX):
     """Context Optimization (CoOp).
 
@@ -286,8 +404,10 @@ class CoOp(TrainerX):
         return loss_summary
 
     def parse_batch_train(self, batch):
-        input = batch["img"]
-        label = batch["label"]
+        # input = batch["img"]
+        # label = batch["label"]
+        input = batch[0]
+        label = batch[1]
         input = input.to(self.device)
         label = label.to(self.device)
         return input, label
