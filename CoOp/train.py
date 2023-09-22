@@ -18,6 +18,7 @@ import datasets.caltech101
 import datasets.ucf101
 import datasets.imagenet
 import datasets.loco
+import datasets.loco_test
 
 import datasets.imagenet_sketch
 import datasets.imagenetv2
@@ -90,7 +91,7 @@ def extend_cfg(cfg):
 
     cfg.TRAINER.COOP = CN()
     cfg.TRAINER.COOP.N_CTX = 16  # number of context vectors
-    cfg.TRAINER.COOP.CSC = False  # class-specific context
+    cfg.TRAINER.COOP.CSC = True  # class-specific context
     cfg.TRAINER.COOP.CTX_INIT = ""  # initialization words
     cfg.TRAINER.COOP.PREC = "fp16"  # fp16, fp32, amp
     cfg.TRAINER.COOP.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
@@ -129,7 +130,7 @@ def setup_cfg(args):
 def main(args, category):
     cfg = setup_cfg(args)
     # setup mvtec category
-    if cfg.DATASET.NAME == 'Loco':
+    if 'Loco' in cfg.DATASET.NAME:
         cfg.DATASET.CATEGORY = category
         
     cfg.freeze()
@@ -159,16 +160,18 @@ def main(args, category):
 
 if __name__ == "__main__":
     DATA = '/home/zhaoxiang/dataset'
-    TRAINER='CoOp_loco'
+    # TRAINER='CoOp_loco'
+    TRAINER='CoOp_loco_test'
     
     # DATASET = 'caltech101'
-    DATASET = 'loco'
+    # DATASET = 'loco'
+    DATASET = 'loco_test'
     
     CFG = 'rn50_ep50'
     CTP = 'end'
     NCTX = 16
     SHOTS = 1
-    CSC = False
+    CSC = True
     SEED = 1
     DIR=f"output/{DATASET}/{TRAINER}/{CFG}_{SHOTS}shots/nctx{NCTX}_csc{CSC}_ctp{CTP}/seed${SEED}"
     parser = argparse.ArgumentParser()
@@ -201,7 +204,7 @@ if __name__ == "__main__":
         default=f"configs/datasets/{DATASET}.yaml",
         help="path to config file for dataset setup",
     )
-    parser.add_argument("--trainer", type=str, default="CoOp_loco", help="name of trainer")
+    parser.add_argument("--trainer", type=str, default=f"{TRAINER}", help="name of trainer")
     parser.add_argument("--backbone", type=str, default="", help="name of CNN backbone")
     parser.add_argument("--head", type=str, default="", help="name of head")
     parser.add_argument("--eval-only", action="store_true", help="evaluation only")

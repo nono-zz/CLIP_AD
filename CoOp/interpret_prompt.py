@@ -25,8 +25,8 @@ def load_clip_to_cpu(backbone_name="RN50"):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("fpath", type=str, help="Path to the learned prompt")
-parser.add_argument("topk", type=int, help="Select top-k similar words")
+parser.add_argument("--fpath", type=str, default='/home/zhaoxiang/CLIP_AD/CoOp/output/loco_test/CoOp_loco_test/rn50_ep50_1shots/nctx16_cscTrue_ctpend/seed$1/prompt_learner/model.pth.tar-50',  help="Path to the learned prompt")
+parser.add_argument("--topk", type=int, default=5, help="Select top-k similar words")
 args = parser.parse_args()
 
 fpath = args.fpath
@@ -60,4 +60,14 @@ if ctx.dim() == 2:
 
 elif ctx.dim() == 3:
     # Class-specific context
-    raise NotImplementedError
+    ctx = ctx[2]
+    distance = torch.cdist(ctx, token_embedding)
+    print(f"Size of distance matrix: {distance.shape}")
+    sorted_idxs = torch.argsort(distance, dim=1)
+    sorted_idxs = sorted_idxs[:, :topk]
+
+    for m, idxs in enumerate(sorted_idxs):
+        words = [tokenizer.decoder[idx.item()] for idx in idxs]
+        dist = [f"{distance[m, idx].item():.4f}" for idx in idxs]
+        print(f"{m+1}: {words} {dist}")
+    # raise NotImplementedError
