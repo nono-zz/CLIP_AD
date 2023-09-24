@@ -2,6 +2,7 @@
 *.log
 *.png
 *.pyc
+*.tiff
 __pycache__
 *.pth
 .ipynb_checkpoints
