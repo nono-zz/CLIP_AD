@@ -32,15 +32,17 @@ def run_winclip(classname, args):
 
     # get device
     if kwargs['use_cpu'] == 0:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-            # device = f"cuda:1"
-        device = torch.device("cuda")
+        device = f"cuda:1"
+        # device = torch.device("cuda")
     else:
         device = f"cpu"
     kwargs['device'] = device
     
     # model
     # model, _ = clip_zzx.load("ViT-B/16", device=device)
-    model, preprocess = clip_zzx.load(args.backbone, device=device)
+    # model, preprocess = clip_zzx.load(args.backbone, device=device)
+    model, preprocess = clip_zzx.load('CS-RN50x64', device=device)
+
 
     # model, _, preprocess = open_clip.create_model_and_transforms(args.backbone, pretrained='laion400m_e32')
     # model_2, _, preprocess = open_clip.create_model_and_transforms("ViT-B/16")
@@ -161,7 +163,7 @@ def get_args():
     parser.add_argument("--load-memory", type=bool, default=True)
     parser.add_argument("--cal-pro", type=bool, default=False)
     parser.add_argument("--experiment_indx", type=int, default=1)
-    parser.add_argument("--gpu-id", type=str, required=False, default=['0','1'])
+    parser.add_argument("--gpu-id", type=str, required=False, default=['1'])
 
     # pure test
     parser.add_argument("--pure-test", type=bool, default=False)

@@ -149,6 +149,7 @@ class ResidualAttentionBlock(nn.Module):
             q_x: torch.Tensor,
             k_x: Optional[torch.Tensor] = None,
             v_x: Optional[torch.Tensor] = None,
+            text_feature: Optional[torch.Tensor] = None,
     ):
         k_x = k_x if k_x is not None else q_x
         v_x = v_x if v_x is not None else q_x
@@ -158,6 +159,12 @@ class ResidualAttentionBlock(nn.Module):
             x, x_ori = self.attn(x)
 
             return [x.transpose(0, 1), x_ori.transpose(0, 1)]
+        elif isinstance(self.attn, AttentionText):
+            x = q_x.transpose(0, 1)
+            x_n, x_a, x_ori = self.attn(x, text_feature=text_feature)
+
+            return [x_n.transpose(0, 1), x_a.transpose(0, 1), x_ori.transpose(0, 1)]
+
         else:
             return self.attn(q_x, k_x, v_x, need_weights=False, attn_mask=self.attn_mask)[0]
 
@@ -166,6 +173,7 @@ class ResidualAttentionBlock(nn.Module):
             q_x: torch.Tensor,
             k_x: Optional[torch.Tensor] = None,
             v_x: Optional[torch.Tensor] = None,
+            text_feature: Optional[torch.Tensor] = None,
     ):
         k_x = self.ln_1_kv(k_x) if hasattr(self, "ln_1_kv") and k_x is not None else None
         v_x = self.ln_1_kv(v_x) if hasattr(self, "ln_1_kv") and v_x is not None else None
@@ -192,6 +200,34 @@ class ResidualAttentionBlock(nn.Module):
                     x_ori = x_ori + self.mlp(self.ln_2(x_ori))
                     x += x_res
                     return [x, x_ori]
+        
+        elif isinstance(self.attn, AttentionText):
+            if len(x) == 3:
+                x_n, x_a, x_ori = x
+                
+                # # send normal text feature and abnormal text feature to different paths
+                text_feature = text_feature.permute(0, 2, 1)
+                x_res = self.attention(self.ln_1(x_ori), text_feature=self.ln_1(text_feature))
+                x_n_res, x_a_res, x_ori_res = x_res
+                x_ori += x_ori_res
+                x_ori = x_ori + self.mlp(self.ln_2(x_ori))
+                x_n += x_n_res # skip ffn for the new path
+                x_a += x_a_res # skip ffn for the new path
+                return [x_n, x_a, x_ori]
+
+            # start of tripple path
+            else:
+                x, x_ori = x
+                text_feature = text_feature.permute(0, 2, 1)
+                x_res = self.attention(self.ln_1(x_ori), text_feature=self.ln_1(text_feature))
+
+                if isinstance(x_res, list):
+                    x_n_res, x_a_res, x_ori_res = x_res
+                    x_ori = x_ori + x_ori_res
+                    x_ori = x_ori + self.mlp(self.ln_2(x_ori))
+                    x_n = x + x_n_res # skip ffn for the new path
+                    x_a = x + x_a_res # skip ffn for the new path
+                    return [x_n, x_a, x_ori]
 
         # singl path before "d"
         else:
@@ -272,17 +308,21 @@ class Transformer(nn.Module):
         return self.resblocks[0].mlp.c_fc.weight.dtype
 
     def forward(self, x: torch.Tensor, out_layers: list = [3, 6, 9],
-                attn_mask: Optional[torch.Tensor] = None):
+                attn_mask: Optional[torch.Tensor] = None, text_feature: torch.Tensor = None):
         
         out_tokens = []
         idx = 0
         for r in self.resblocks:
             idx+=1
-            x = r(x)
+            x = r(x, text_feature=text_feature)
             if idx in out_layers:
                 if len(x)==2:
                     out_tokens.append(x[0])
                     out_tokens.append(x[1])
+                elif len(x) == 3:
+                    out_tokens.append(x[0])
+                    out_tokens.append(x[1])
+                    out_tokens.append(x[2])
                 else:
                     out_tokens.append(x)
         return x, out_tokens
@@ -291,6 +331,123 @@ def softmax(x):
     x_exp = x.exp()  # m * n
     partition = x_exp.sum(dim=-1, keepdim=True)  # 按列累加, m * 1
     return x_exp / partition  # 广播机制, [m * n] / [m * 1] = [m * n]
+
+class AttentionText(nn.Module):
+    def __init__(self, out_dim, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., settings=''):
+        super().__init__()
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        self.scale = qk_scale or head_dim ** -0.5
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(out_dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+        self.settings = settings
+
+    def forward(self, x, text_feature = None):
+        if text_feature is None:
+            B, N, C = x.shape
+            qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            q, k, v = qkv[0], qkv[1], qkv[2]
+
+            # original self-attention for the original path
+            attn_ori = (q @ k.transpose(-2, -1)) * self.scale
+            attn_ori = softmax(attn_ori)#.softmax(dim=-1)
+            attn_ori = self.attn_drop(attn_ori)
+            x_ori = (attn_ori @ v).transpose(1, 2).reshape(B, N, C)
+            
+            # replace k & q by v
+            k = v
+            q = k
+
+            # resnets have only one self-attention, norm and larger scale perform better
+            if self.settings == 'resnet':
+                k = k / (k.norm(p=2, dim=-1, keepdim=True) + 1e-6)
+                q = k
+                scale = self.scale * 8
+            else:
+                scale = self.scale
+            
+            # self-attention, higher temperate for resnets performs better
+            attn = (q @ k.transpose(-2, -1)) * scale
+            attn = (attn).softmax(dim=-1)
+            attn = self.attn_drop(attn)
+            x = (attn @ v).transpose(1, 2).reshape(B, N, C) # clip_surgery
+            #x = v.transpose(1, 2).reshape(B, N, C) # mask_clip
+            x = self.proj_drop(self.proj(x))
+            x_ori = self.proj_drop(self.proj(x_ori))
+            return [x, x_ori]
+        else:
+            B, N, C = x.shape
+            qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            q, k, v = qkv[0], qkv[1], qkv[2]
+
+            # original self-attention for the original path
+            attn_ori = (q @ k.transpose(-2, -1)) * self.scale
+            attn_ori = softmax(attn_ori)#.softmax(dim=-1)
+            attn_ori = self.attn_drop(attn_ori)
+            x_ori = (attn_ori @ v).transpose(1, 2).reshape(B, N, C)
+            
+            # calculate new text aligned attention
+            """normal text x"""
+            normal_text_feature = text_feature[:,0,:]
+            x_text_normal = x
+            x_text_normal[:,0,:] = normal_text_feature
+            qkv = self.qkv(x_text_normal).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            q, k, v = qkv[0], qkv[1], qkv[2]
+            
+            # replace k & q by v
+            k = v
+            q = k
+
+            # resnets have only one self-attention, norm and larger scale perform better
+            if self.settings == 'resnet':
+                k = k / (k.norm(p=2, dim=-1, keepdim=True) + 1e-6)
+                q = k
+                scale = self.scale * 8
+            else:
+                scale = self.scale
+            
+            # self-attention, higher temperate for resnets performs better
+            attn = (q @ k.transpose(-2, -1)) * scale
+            attn = (attn).softmax(dim=-1)
+            attn = self.attn_drop(attn)
+            x_text_normal = (attn @ v).transpose(1, 2).reshape(B, N, C) # clip_surgery
+            
+            """abnormal text x"""
+            # calculate new text aligned attention
+            abnormal_text_featue = text_feature[:,1,:]
+            x_text_abnormal = x
+            x_text_abnormal[:,0,:] = abnormal_text_featue
+            qkv = self.qkv(x_text_abnormal).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            q, k, v = qkv[0], qkv[1], qkv[2]
+            
+            # replace k & q by v
+            k = v
+            q = k
+
+            # resnets have only one self-attention, norm and larger scale perform better
+            if self.settings == 'resnet':
+                k = k / (k.norm(p=2, dim=-1, keepdim=True) + 1e-6)
+                q = k
+                scale = self.scale * 8
+            else:
+                scale = self.scale
+            
+            # self-attention, higher temperate for resnets performs better
+            attn = (q @ k.transpose(-2, -1)) * scale
+            attn = (attn).softmax(dim=-1)
+            attn = self.attn_drop(attn)
+            x_text_abnormal = (attn @ v).transpose(1, 2).reshape(B, N, C) # clip_surgery
+            
+            """final post processing of the feature"""
+            #x = v.transpose(1, 2).reshape(B, N, C) # mask_clip
+            x_text_normal = self.proj_drop(self.proj(x_text_normal))
+            x_text_abnormal = self.proj_drop(self.proj(x_text_abnormal))
+            x_ori = self.proj_drop(self.proj(x_ori))
+            return [x_text_normal, x_text_abnormal, x_ori]
+            
 
 class Attention(nn.Module):
     def __init__(self, out_dim, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., settings=''):
@@ -477,13 +634,21 @@ class VisionTransformer(nn.Module):
         else:
             return x#x[:, 0], x[:, 1:]
 
-    def forward(self, x: torch.Tensor, out_layers: list):
+    def forward(self, x: torch.Tensor, out_layers: list, text_feature: torch.Tensor = None):
         # reform the architecture during first inference
         if self.attn == None:
             
             # apply architecture surgery on the last 6 blocks
-            for i in range(1, 13): # surgery 7, maskclip 2
+            for i in range(4, 13): # surgery 7, maskclip 2
                 self.attn = Attention(self.embed_dim, self.embed_dim, self.num_heads, True)
+                self.attn.qkv.weight.data = self.transformer.resblocks[-i].attn.in_proj_weight.clone()
+                self.attn.qkv.bias.data = self.transformer.resblocks[-i].attn.in_proj_bias.clone()
+                self.attn.proj.weight.data = self.transformer.resblocks[-i].attn.out_proj.weight.clone()
+                self.attn.proj.bias.data = self.transformer.resblocks[-i].attn.out_proj.bias.clone()
+                self.transformer.resblocks[-i].attn = self.attn
+            
+            for i in range(1, 4): # surgery 7, maskclip 2
+                self.attn = AttentionText(self.embed_dim, self.embed_dim, self.num_heads, True)
                 self.attn.qkv.weight.data = self.transformer.resblocks[-i].attn.in_proj_weight.clone()
                 self.attn.qkv.bias.data = self.transformer.resblocks[-i].attn.in_proj_bias.clone()
                 self.attn.proj.weight.data = self.transformer.resblocks[-i].attn.out_proj.weight.clone()
@@ -514,35 +679,63 @@ class VisionTransformer(nn.Module):
         x = self.ln_pre(x)
 
         x = x.permute(1, 0, 2)  # NLD -> LND
-        x, patch_tokens = self.transformer(x, out_layers)
-        x, x_ori = x
-        x[0] = x_ori[0]
-        #x = x_ori
-        
-        # attn = attn[0, 0, 1:].view(14, 14)  # 49
-        x = x.permute(1, 0, 2)  # LND -> NLD
-        patch_tokens = [patch_tokens[t].permute(1, 0, 2) for t in range(len(patch_tokens))]  # LND -> NLD
-        # patch_tokens = patch_tokens.permute(1, 0, 2)  # LND -> NLD
+        if text_feature is None:
+            x, patch_tokens = self.transformer(x, out_layers)
+            x, x_ori = x
+            x[0] = x_ori[0]
+            #x = x_ori
+            
+            # attn = attn[0, 0, 1:].view(14, 14)  # 49
+            x = x.permute(1, 0, 2)  # LND -> NLD
+            patch_tokens = [patch_tokens[t].permute(1, 0, 2) for t in range(len(patch_tokens))]  # LND -> NLD
+            # patch_tokens = patch_tokens.permute(1, 0, 2)  # LND -> NLD
 
-        if self.attn_pool is not None:
-            x = self.attn_pool(x)
-            x = self.ln_post(x)
-            pooled = self._global_pool(x)
-        else:
-            pooled = self._global_pool(x)
-            pooled = self.ln_post(pooled)
-            # patch_pooled, patch_tokens = self._global_pool(patch_tokens)
-            # tokens = self.ln_post(tokens)
+            if self.attn_pool is not None:
+                x = self.attn_pool(x)
+                x = self.ln_post(x)
+                pooled = self._global_pool(x)
+            else:
+                pooled = self._global_pool(x)
+                pooled = self.ln_post(pooled)
+                # patch_pooled, patch_tokens = self._global_pool(patch_tokens)
+                # tokens = self.ln_post(tokens)
 
-        if self.proj is not None:
-            pooled = pooled @ self.proj
-            # patch_tokens = patch_tokens @ self.proj  # 不知道能不能行
-            # tokens = tokens @ self.proj
-        if self.output_tokens:
+            if self.proj is not None:
+                pooled = pooled @ self.proj
+                # patch_tokens = patch_tokens @ self.proj  # 不知道能不能行
+                # tokens = tokens @ self.proj
+            if self.output_tokens:
+                return pooled, patch_tokens
+
             return pooled, patch_tokens
 
-        return pooled, patch_tokens
+        else:
+            x, patch_tokens = self.transformer(x, out_layers, text_feature=text_feature)
+            x_n, x_a, x_ori = x
+            
+            x = x_ori.permute(1, 0, 2)  # LND -> NLD
+            patch_tokens = [patch_tokens[t].permute(1, 0, 2) for t in range(len(patch_tokens))]  # LND -> NLD
+            # patch_tokens = patch_tokens.permute(1, 0, 2)  # LND -> NLD
 
+            if self.attn_pool is not None:
+                x = self.attn_pool(x)
+                x = self.ln_post(x)
+                pooled = self._global_pool(x)
+            else:
+                pooled = self._global_pool(x)
+                pooled = self.ln_post(pooled)
+                # patch_pooled, patch_tokens = self._global_pool(patch_tokens)
+                # tokens = self.ln_post(tokens)
+
+            if self.proj is not None:
+                pooled = pooled @ self.proj
+                # patch_tokens = patch_tokens @ self.proj  # 不知道能不能行
+                # tokens = tokens @ self.proj
+            if self.output_tokens:
+                return pooled, patch_tokens
+
+            return pooled, patch_tokens
+ 
 
 class TextTransformer(nn.Module):
     output_tokens: torch.jit.Final[bool]

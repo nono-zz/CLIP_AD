@@ -260,7 +260,7 @@ class MvTecLocoDataset(data.Dataset):
 			if len(mask_files) == 1:
 				mask_path = os.path.join(mask_dir_path, mask_files[0])
 			else:
-				print('two gt_masks are found!!!')
+				print('two gt_masks are found!!! class name is {}'.format(cls_name))
 				mask_path = os.path.join(mask_dir_path, mask_files[0])		# leave it here for future changes
 		return mask_path, cls_name, anomaly_type
 
@@ -283,13 +283,14 @@ class MvTecLocoDataset(data.Dataset):
 				img_mask = Image.fromarray(img_mask.astype(np.uint8) * 255, mode='L')
 				anomaly = 1
 		# transforms
+		ori_size = img.size
 		img = self.transform(img) if self.transform is not None else img
 		assert img.shape[-1] == 240 
 		img_mask = self.target_transform(
 			img_mask) if self.target_transform is not None and img_mask is not None else img_mask
 		img_mask = [] if img_mask is None else img_mask
 		return {'img': img, 'img_mask': img_mask, 'cls_name': cls_name, 'anomaly_type': anomaly_type,
-				'img_path': os.path.join(self.root, img_path), 'anomaly': anomaly}
+				'img_path': os.path.join(self.root, img_path), 'anomaly': anomaly, 'img_ori_size': ori_size}
 
 
 import random

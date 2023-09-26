@@ -1,13 +1,26 @@
-23-09-23 18:39:15.959 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_loco_anomaly_detection
-23-09-23 18:39:15.959 - INFO: save_path: /home/zhaoxiang/CLIP_AD/ZsadCLIP/results/loco
-23-09-23 18:39:15.960 - INFO: config_path: /home/zhaoxiang/CLIP_AD/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
-23-09-23 18:39:15.960 - INFO: dataset: loco
-23-09-23 18:39:15.960 - INFO: model: ViT-B-16-plus-240
-23-09-23 18:39:15.960 - INFO: pretrained: laion400m_e32
-23-09-23 18:39:15.960 - INFO: features_list: [3, 6, 9, 12]
-23-09-23 18:39:15.960 - INFO: image_size: [240, 240]
-23-09-23 18:39:15.960 - INFO: mode: zero_shot
-23-09-23 18:39:15.960 - INFO: visualize: False
-23-09-23 18:39:15.960 - INFO: adapter: False
-23-09-23 18:39:15.960 - INFO: epoch: 5
-23-09-23 18:39:15.960 - INFO: seed: 111
+23-09-24 17:23:45.498 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_loco_anomaly_detection
+23-09-24 17:23:45.498 - INFO: save_path: /home/zhaoxiang/CLIP_AD/ZsadCLIP/results/loco
+23-09-24 17:23:45.498 - INFO: config_path: /home/zhaoxiang/CLIP_AD/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-24 17:23:45.498 - INFO: dataset: loco
+23-09-24 17:23:45.498 - INFO: model: ViT-B-16-plus-240
+23-09-24 17:23:45.498 - INFO: pretrained: laion400m_e32
+23-09-24 17:23:45.498 - INFO: features_list: [3, 6, 9, 12]
+23-09-24 17:23:45.498 - INFO: image_size: [240, 240]
+23-09-24 17:23:45.498 - INFO: mode: zero_shot
+23-09-24 17:23:45.498 - INFO: visualize: False
+23-09-24 17:23:45.499 - INFO: adapter: False
+23-09-24 17:23:45.499 - INFO: epoch: 5
+23-09-24 17:23:45.499 - INFO: seed: 111
+23-09-24 21:25:45.379 - INFO: data_path: /home/zhaoxiang/dataset/mvtec_loco_anomaly_detection
+23-09-24 21:25:45.379 - INFO: save_path: /home/zhaoxiang/CLIP_AD/ZsadCLIP/results/loco
+23-09-24 21:25:45.379 - INFO: config_path: /home/zhaoxiang/CLIP_AD/ZsadCLIP/open_clip/model_configs/ViT-B-16.json
+23-09-24 21:25:45.379 - INFO: dataset: loco
+23-09-24 21:25:45.379 - INFO: model: ViT-B-16-plus-240
+23-09-24 21:25:45.380 - INFO: pretrained: laion400m_e32
+23-09-24 21:25:45.380 - INFO: features_list: [3, 6, 9, 12]
+23-09-24 21:25:45.380 - INFO: image_size: [240, 240]
+23-09-24 21:25:45.380 - INFO: mode: zero_shot
+23-09-24 21:25:45.380 - INFO: visualize: False
+23-09-24 21:25:45.380 - INFO: adapter: False
+23-09-24 21:25:45.380 - INFO: epoch: 5
+23-09-24 21:25:45.380 - INFO: seed: 111

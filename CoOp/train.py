@@ -160,12 +160,12 @@ def main(args, category):
 
 if __name__ == "__main__":
     DATA = '/home/zhaoxiang/dataset'
-    # TRAINER='CoOp_loco'
-    TRAINER='CoOp_loco_test'
+    TRAINER='CoOp_loco'
+    # TRAINER='CoOp_loco_test'
     
     # DATASET = 'caltech101'
-    # DATASET = 'loco'
-    DATASET = 'loco_test'
+    DATASET = 'loco'
+    # DATASET = 'loco_test'
     
     CFG = 'rn50_ep50'
     CTP = 'end'
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("--trainer", type=str, default=f"{TRAINER}", help="name of trainer")
     parser.add_argument("--backbone", type=str, default="", help="name of CNN backbone")
     parser.add_argument("--head", type=str, default="", help="name of head")
-    parser.add_argument("--eval-only", action="store_true", help="evaluation only")
+    parser.add_argument("--eval-only", action="store_true", default=True, help="evaluation only")
     parser.add_argument(
         "--model-dir",
         type=str,

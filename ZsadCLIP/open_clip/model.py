@@ -209,8 +209,8 @@ class CLIP(nn.Module):
         self.visual.set_grad_checkpointing(enable)
         self.transformer.grad_checkpointing = enable
 
-    def encode_image(self, image, out_layers, normalize: bool = False):
-        features = self.visual(image, out_layers)
+    def encode_image(self, image, out_layers, normalize: bool = False, text_feature=None):
+        features = self.visual(image, out_layers, text_feature=text_feature)
         return F.normalize(features, dim=-1) if normalize else features
 
     def encode_text(self, text, normalize: bool = False):

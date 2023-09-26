@@ -160,7 +160,20 @@ class LinearLayer(nn.Module):
                 B, C, H, W = tokens[i].shape
                 tokens[i] = self.fc[i](tokens[i].view(B, C, -1).permute(0, 2, 1).contiguous())
         return tokens
-
+    
+class ReverseProjection(nn.Module):
+    def __init__(self, dim_in, dim_out, k, model_name, model):
+        super(ReverseProjection, self).__init__()
+        self.ln = model.visual.ln_post
+        self.project = model.visual.proj
+        self.inverse_project = torch.pinverse(self.project)
+    
+    def forward(self, text_token):
+        text_token = text_token.permute(0, 2, 1)
+        text_token = self.ln(text_token @ self.inverse_project)
+        text_token = text_token.permute(0, 2, 1)
+        # text_token = self.ln(torch.matmul(text_token, self.inverse_project))
+        return text_token
 
 class FNN(nn.Module):
     def __init__(self, input_dim=640, hidden_dim=640, dropout_prob=0.5):

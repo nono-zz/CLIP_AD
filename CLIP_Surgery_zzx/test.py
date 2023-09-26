@@ -42,7 +42,6 @@ def test(model_text,
     # model.build_text_feature_gallery(class_name)
     logger.info('build text feature gallery finished.')
 
-
     scores = []
     multi_scale_scores = []
     test_imgs = []
