@@ -15,9 +15,21 @@ from contextlib import nullcontext
 import time
 from pytorch_lightning import seed_everything
 
+import statistics
+
 from ldm.util import instantiate_from_config
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.models.diffusion.plms import PLMSSampler
+
+from optimizer import build_optimizer
+from lr_scheduler import build_lr_scheduler
+import yaml
+
+from torch.utils.data import Dataset, DataLoader
+from dataset import CustomDataset
+
+from yacs.config import CfgNode as CN
+from cfg_defaults import _C as cfg_default
 
 
 def chunk(it, size):
@@ -48,7 +60,7 @@ def load_model_from_config(config, ckpt, verbose=False):
 def load_img(path):
     image = Image.open(path).convert("RGB")
     w, h = image.size
-    print(f"loaded input image of size ({w}, {h}) from {path}")
+    # print(f"loaded input image of size ({w}, {h}) from {path}")
     # w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
     w, h = (256, 256)
     # w, h = (512, 512)
@@ -62,7 +74,7 @@ def load_img(path):
 def main(CATEGORY = None):
     parser = argparse.ArgumentParser()
     # CATEGORY = 'tile'
-    CATEGORY = 'bottle'
+    CATEGORY = 'juice_bottle'
     # CATEGORY = 'pushpins'
 
     # parser.add_argument(
@@ -95,8 +107,8 @@ def main(CATEGORY = None):
         type=float,
         # default=0.75,
         # default=0.05,
-        default=0.2,
-        # default=0.99,
+        # default=0.2,
+        default=0.99,
         help="strength for noising/unnoising. 1.0 corresponds to full destruction of information in init image",
     )
 
@@ -207,7 +219,7 @@ def main(CATEGORY = None):
     parser.add_argument(
         "--config",
         type=str,
-        default="/sda/zhaoxiang/CLIP_AD/stable-diffusion/configs/stable-diffusion/v1-inference.yaml",
+        default="/sda/zhaoxiang/CLIP_AD/stable-diffusion/configs/stable-diffusion/v1-prompt_learner_train.yaml",
     )
     parser.add_argument(
         "--ckpt",
@@ -260,69 +272,100 @@ def main(CATEGORY = None):
             data = f.read().splitlines()
             data = list(chunk(data, batch_size))
 
-    sample_path = os.path.join(outpath, f"{opt.cls_name}", f"{opt.prompt}", f"strength_{opt.strength}")
+    sample_path = os.path.join(outpath, 'training', f"strength_{opt.strength}")
     os.makedirs(sample_path, exist_ok=True)
-    base_count = len(os.listdir(sample_path))
+    # base_count = len(os.listdir(sample_path))
+    base_count = 0
     grid_count = len(os.listdir(outpath)) - 1
+    
+    config_path = '/sda/zhaoxiang/CLIP_AD/stable-diffusion/scripts/train_config.yaml'
+    # with open(config_path, 'r') as file:
+    #     cfg = yaml.safe_load(file)
+    # for key, value in cfg.items():
+    #     setattr(cfg, key, value)
+    cfg = cfg_default.clone()
+    cfg.merge_from_file(config_path)
 
-    assert os.path.isfile(opt.init_img)
-    init_image = load_img(opt.init_img).to(device)
-    init_image = repeat(init_image, '1 ... -> b ...', b=batch_size)
-    init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
+    optim = build_optimizer(model.cond_stage_model.prompt_learner, cfg.OPTIM)
+    sched = build_lr_scheduler(optim, cfg.OPTIM)
+    mse_loss = torch.nn.MSELoss()
+    
+    data_folder = '/home/zhaoxiang/dataset/mvtec_loco_anomaly_detection/breakfast_box/train/good/'
+    custom_dataset = CustomDataset(data_folder)
+    
+    batch_size = 10
+    data_loader = DataLoader(custom_dataset, batch_size=batch_size, shuffle=True)
+    
+    for epoch in range(50):
+        loss = []
+        for img_paths in data_loader:
+            imgs = []
+            for img_path in img_paths:
+                img = load_img(img_path).to(device)
+                imgs.append(img)
+            # init_image = torch.cat(imgs, 'b ... -> b ...', b=len(img_paths))
+            init_image = torch.cat(imgs, dim=0)
+            init_image.requires_grad_()
+            # init_image = repeat(init_image, '1 ... -> b ...', b=batch_size)
+            init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
 
-    sampler.make_schedule(ddim_num_steps=opt.ddim_steps, ddim_eta=opt.ddim_eta, verbose=False)
+            sampler.make_schedule(ddim_num_steps=opt.ddim_steps, ddim_eta=opt.ddim_eta, verbose=False)
 
-    assert 0. <= opt.strength <= 1., 'can only work with strength in [0.0, 1.0]'
-    t_enc = int(opt.strength * opt.ddim_steps)
-    print(f"target t_enc is {t_enc} steps")
+            assert 0. <= opt.strength <= 1., 'can only work with strength in [0.0, 1.0]'
+            t_enc = int(opt.strength * opt.ddim_steps)
+            print(f"target t_enc is {t_enc} steps")
 
-    precision_scope = autocast if opt.precision == "autocast" else nullcontext
-    with torch.no_grad():
-        with precision_scope("cuda"):
-            with model.ema_scope():
-                tic = time.time()
-                all_samples = list()
-                for n in trange(opt.n_iter, desc="Sampling"):
-                    for prompts in tqdm(data, desc="data"):
-                        uc = None
-                        if opt.scale != 1.0:
-                            uc = model.get_learned_conditioning(batch_size * [""])
-                        if isinstance(prompts, tuple):
-                            prompts = list(prompts)
-                        c = model.get_learned_conditioning(prompts)
+            precision_scope = autocast if opt.precision == "autocast" else nullcontext
+            with precision_scope("cuda"):
+                with model.ema_scope():
+                    tic = time.time()
+                    all_samples = list()
+                    for n in trange(opt.n_iter, desc="Sampling"):
+                        for prompts in tqdm(data, desc="data"):
+                            uc = None
+                            if opt.scale != 1.0:
+                                uc = model.get_learned_conditioning(batch_size * [""])
+                            if isinstance(prompts, tuple):
+                                prompts = list(prompts)
+                            c = model.get_learned_conditioning(prompts)
 
-                        # encode (scaled latent)
-                        z_enc = sampler.stochastic_encode(init_latent, torch.tensor([t_enc]*batch_size).to(device))
-                        # decode it
-                        samples = sampler.decode(z_enc, c, t_enc, unconditional_guidance_scale=opt.scale,
-                                                 unconditional_conditioning=uc,)
+                            # encode (scaled latent)
+                            z_enc = sampler.stochastic_encode(init_latent, torch.tensor([t_enc]*batch_size).to(device))
+                            # decode it
+                            samples = sampler.decode(z_enc, c, t_enc, unconditional_guidance_scale=opt.scale,
+                                                        unconditional_conditioning=uc,)
 
-                        x_samples = model.decode_first_stage(samples)
-                        x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
+                            x_samples = model.decode_first_stage(samples)
+                            x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
+                            
+                            rec_loss = mse_loss(x_samples, init_image)
+                            loss.append(rec_loss.item())
+                            
+                            # step and update
+                            optim.zero_grad()
+                            rec_loss.backward()
+                            optim.step()
+                            print('loss is: {}'.format(statistics.mean(loss)))
 
-                        if not opt.skip_save:
-                            for x_sample in x_samples:
-                                x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
-                                Image.fromarray(x_sample.astype(np.uint8)).save(
-                                    os.path.join(sample_path, f"{base_count:05}.png"))
-                                base_count += 1
-                        all_samples.append(x_samples)
+                            if not opt.skip_save:
+                                for x_sample in x_samples:
+                                    x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
+                                    Image.fromarray(x_sample.astype(np.uint8)).save(
+                                        os.path.join(sample_path, f"{base_count:05}.png"))
+                                    base_count += 1
+                            all_samples.append(x_samples)
 
-                if not opt.skip_grid:
-                    # additionally, save as grid
-                    grid = torch.stack(all_samples, 0)
-                    grid = rearrange(grid, 'n b c h w -> (n b) c h w')
-                    grid = make_grid(grid, nrow=n_rows)
+                    if not opt.skip_grid:
+                        # additionally, save as grid
+                        grid = torch.stack(all_samples, 0)
+                        grid = rearrange(grid, 'n b c h w -> (n b) c h w')
+                        grid = make_grid(grid, nrow=n_rows)
 
-                    # to image
-                    grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
-                    Image.fromarray(grid.astype(np.uint8)).save(os.path.join(outpath, f'grid-{grid_count:04}.png'))
-                    grid_count += 1
-
-                toc = time.time()
-
-    print(f"Your samples are ready and waiting for you here: \n{outpath} \n"
-          f" \nEnjoy.")
+                        # to image
+                        grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
+                        Image.fromarray(grid.astype(np.uint8)).save(os.path.join(outpath, f'grid-{grid_count:04}.png'))
+                        grid_count += 1
+        print('loss for epoch[{}/50] is: {}'.format(epoch, statistics.mean(loss)))
 
 
 if __name__ == "__main__":
