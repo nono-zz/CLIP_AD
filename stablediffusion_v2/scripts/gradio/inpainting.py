@@ -92,8 +92,8 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1
         c = model.cond_stage_model.encode(batch["txt"])
 
         c_cat = list()
-        for ck in model.concat_keys:
-            cc = batch[ck].float()
+        for ck in model.concat_keys:     #('mask', 'masked_image')
+            cc = batch[ck].float()          # 'masked_image'
             if ck != model.masked_image_key:
                 bchw = [num_samples, 4, h // 8, w // 8]
                 cc = torch.nn.functional.interpolate(cc, size=bchw[-2:])
@@ -135,7 +135,8 @@ def pad_image(input_image):
         np.array(input_image.size) / 64).astype(int)), axis=0) * 64 - input_image.size
     im_padded = Image.fromarray(
         np.pad(np.array(input_image), ((0, pad_h), (0, pad_w), (0, 0)), mode='edge'))
-    im_resized = im_padded.resize((256, 256))
+    # im_resized = im_padded.resize((256, 256))
+    im_resized = im_padded.resize((512, 512))
     # return im_padded
     return im_resized
 
@@ -161,8 +162,11 @@ def predict(input_image, prompt, ddim_steps, num_samples, scale, seed):
 
     return result
 
-config = '/sda/zhaoxiang/CLIP_AD/stablediffusion_v2/configs/stable-diffusion/v2-inpainting-inference.yaml'
-ckpt = '/sda/zhaoxiang/CLIP_AD/stablediffusion_v2/checkpoints/512-inpainting-ema.ckpt'
+# config = '/sda/zhaoxiang/CLIP_AD/stablediffusion_v2/configs/stable-diffusion/v2-inpainting-inference.yaml'
+# ckpt = '/sda/zhaoxiang/CLIP_AD/stablediffusion_v2/checkpoints/512-inpainting-ema.ckpt'
+ckpt = '/sda/zhaoxiang/CLIP_AD/stablediffusion_v2/checkpoints/sd-v1-5-inpainting.ckpt'
+config = '/sda/zhaoxiang/CLIP_AD/stablediffusion_v2/configs/stable-diffusion/v1-inpainting-inference.yaml'
+
 sampler = initialize_model(config, ckpt)
 
 block = gr.Blocks().queue()
@@ -198,4 +202,4 @@ with block:
                      input_image, prompt, ddim_steps, num_samples, scale, seed], outputs=[gallery])
 
 
-block.launch()
+block.launch(share=True)
