@@ -95,7 +95,7 @@ def check_safety(x_image):
     return x_checked_image, has_nsfw_concept
 
 
-def main():
+def main(category):
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -105,7 +105,7 @@ def main():
         # default="a painting of a virus monster playing guitar",
         # default="a realistic photo of a bottle standing on the desk, there should be a defect or damaged part on the bottle.",
         # default="a realistic photo of a bottle standing on the desk, there should be a defect or damaged part on the bottle, nikon d850 50mm",
-        default="a realistic photo of a capsule pill, (photo realistic), hyper details, super resolution, single ojbect, perfect",
+        default=f"a realistic photo of a {category}, (photo realistic), hyper details, super resolution, single ojbect, perfect, salient",
         # default="a realistic photo of a capsule pill, (photo realistic), hyper details, super resolution, salient, single ojbect, perfect, DSLR photo",
         # default="a realistic photo of a cat, running on the grass, with brown fur, and blue sky, photorealistic",
         help="the prompt to render"
@@ -359,4 +359,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid', 'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'tile', 'toothbrush', 'transistor', 'wood', 'zipper']
+    for category in categories:
+        main(category)
