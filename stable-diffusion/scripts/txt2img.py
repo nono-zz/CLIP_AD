@@ -102,7 +102,12 @@ def main():
         "--prompt",
         type=str,
         nargs="?",
-        default="a painting of a virus monster playing guitar",
+        # default="a painting of a virus monster playing guitar",
+        # default="a realistic photo of a bottle standing on the desk, there should be a defect or damaged part on the bottle.",
+        # default="a realistic photo of a bottle standing on the desk, there should be a defect or damaged part on the bottle, nikon d850 50mm",
+        default="a realistic photo of a capsule pill, (photo realistic), hyper details, super resolution, single ojbect, perfect",
+        # default="a realistic photo of a capsule pill, (photo realistic), hyper details, super resolution, salient, single ojbect, perfect, DSLR photo",
+        # default="a realistic photo of a cat, running on the grass, with brown fur, and blue sky, photorealistic",
         help="the prompt to render"
     )
     parser.add_argument(
@@ -210,19 +215,21 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default="configs/stable-diffusion/v1-inference.yaml",
+        default="/sda/zhaoxiang_sda/CLIP_AD/stable-diffusion/configs/stable-diffusion/v1-inference.yaml",
         help="path to config which constructs model",
     )
     parser.add_argument(
         "--ckpt",
         type=str,
-        default="models/ldm/stable-diffusion-v1/model.ckpt",
+        # default="models/ldm/stable-diffusion-v1/model.ckpt",
+        # default="/sda/zhaoxiang_sda/CLIP_AD/stable-diffusion/models/ldm/stable-diffusion-v1/sd-v1-1-full-ema.ckpt",
+        default="/sda/zhaoxiang_sda/CLIP_AD/stable-diffusion/models/ldm/stable-diffusion-v1/v1-5-pruned.ckpt",
         help="path to checkpoint of model",
     )
     parser.add_argument(
         "--seed",
         type=int,
-        default=42,
+        default=1,
         help="the seed (for reproducible sampling)",
     )
     parser.add_argument(
@@ -314,9 +321,12 @@ def main():
                         x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                         x_samples_ddim = x_samples_ddim.cpu().permute(0, 2, 3, 1).numpy()
 
-                        x_checked_image, has_nsfw_concept = check_safety(x_samples_ddim)
+                        # x_checked_image, has_nsfw_concept = check_safety(x_samples_ddim)
 
-                        x_checked_image_torch = torch.from_numpy(x_checked_image).permute(0, 3, 1, 2)
+                        # x_checked_image_torch = torch.from_numpy(x_checked_image).permute(0, 3, 1, 2)
+                        
+
+                        x_checked_image_torch = torch.from_numpy(x_samples_ddim).permute(0, 3, 1, 2)
 
                         if not opt.skip_save:
                             for x_sample in x_checked_image_torch:
