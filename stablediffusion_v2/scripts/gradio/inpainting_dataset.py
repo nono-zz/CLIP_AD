@@ -173,92 +173,70 @@ config = '/sda/zhaoxiang_sda/CLIP_AD/stablediffusion_v2/configs/stable-diffusion
 
 sampler = initialize_model(config, ckpt)
 
-# block = gr.Blocks().queue()
-# with block:
-#     with gr.Row():
-#         gr.Markdown("## Stable Diffusion Inpainting")
+# set hyperparameters
+ddim_steps = 45
+num_samples = 1
+scale = 10
+seed = 1
 
-    # with gr.Row():
-    #     with gr.Column():
-    #         input_image = gr.Image(source='upload', tool='sketch', type="pil")
-    #         prompt = gr.Textbox(label="Prompt")
-    #         run_button = gr.Button(label="Run")
-    #         with gr.Accordion("Advanced options", open=False):
-    #             num_samples = gr.Slider(
-    #                 label="Images", minimum=1, maximum=4, value=4, step=1)
-    #             ddim_steps = gr.Slider(label="Steps", minimum=1,
-    #                                    maximum=50, value=45, step=1)
-    #             scale = gr.Slider(
-    #                 label="Guidance Scale", minimum=0.1, maximum=30.0, value=10, step=0.1
-    #             )
-    #             seed = gr.Slider(
-    #                 label="Seed",
-    #                 minimum=0,
-    #                 maximum=2147483647,
-    #                 step=1,
-    #                 randomize=True,
-    #             )
-    #     with gr.Column():
-    #         gallery = gr.Gallery(label="Generated images", show_label=False).style(
-    #             grid=[2], height="auto")
-
-    # run_button.click(fn=predict, inputs=[
-    #                  input_image, prompt, ddim_steps, num_samples, scale, seed], outputs=[gallery])
-
-for j in range(100):
-
-    CATEGORY = 'bottle'
-
-    # set the prompt    
-    # prompt = f"a photo of a {CATEGORY}, defect, logical mistake, damaged parts, broken, (hyper details), (realistic), 8k"
-    prompt = f"defect, scratches, dents, colored spots, cracks, misplacement, missing parts, damaged, flaw, blemished, broken"
-
-    # Example usage:
-    image_path = f"/sda/zhaoxiang_sda/outputs/defect_dataset/images_raw/{CATEGORY}/00007.png"
-    num_superpixels = 100
-    target_superpixel = None
-    target_size = (512, 512)
-
-    image, superpixel_mask = superpixel_segmentation(image_path, num_superpixels, target_superpixel)
-    resized_image, resized_mask = pad_and_resize(image, superpixel_mask, target_size)
-
-    # resized_image.save('/sda/zhaoxiang_sda/outputs/inpainting/resized_image.jpg')
-    mask_dir = '/sda/zhaoxiang_sda/outputs/inpainting/mask'
-    mask_count = len(os.listdir(mask_dir))
-    resized_mask.save(os.path.join(mask_dir, f"{mask_count:05}.png"))
-    print('done')
-
-    # set hyperparameters
-    ddim_steps = 45
-    num_samples = 4
-    scale = 10
-    seed = 1
-
-    width, height = resized_image.size
-    print("Inpainting...", width, height)
-    save_dir = '/sda/zhaoxiang_sda/outputs/inpainting/results'
-    base_count = len(os.listdir(save_dir))
-
-    result_images = inpaint(
-        sampler=sampler,
-        image=resized_image,
-        mask=resized_mask,
-        prompt=prompt,
-        seed=seed,
-        scale=scale,
-        ddim_steps=ddim_steps,
-        num_samples=num_samples,
-        h=height, w=width
-    )
-
-    for index, result_image in enumerate(result_images):
-        # check image difference
-        init_image_array = np.array(resized_image)
-        result_image_array = np.array(result_image)
-        flag = image_diference_check(init_image_array, result_image_array)
-        
-        if flag:
-            result_image.save(os.path.join(save_dir, f"{mask_count}_{index:05}.png"))
-        else:
-            print("difference check failed")
+# Example usage:
+base_dir = "/sda/zhaoxiang_sda/outputs/defect_dataset"
+raw_image_dir = os.path.join('/sda/zhaoxiang_sda/outputs/', 'images_raw')
+categories = os.listdir(raw_image_dir)
+for category in categories:
+    class_dir = os.path.join(raw_image_dir, category)
+    mask_dir = os.path.join(base_dir, 'masks_defect', category)
+    save_dir = os.path.join(base_dir, 'images_defect', category)
     
+    if not os.path.exists(mask_dir):
+        os.makedirs(mask_dir, exist_ok=True)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir, exist_ok=True)
+    
+    # set the prompt    
+    prompt = f"a photo of a {category}, defect, logical mistake, damaged parts, broken, (hyper details), (realistic), 8k"
+
+    image_names = os.listdir(class_dir)
+    for image_name in image_names:
+        image_path = os.path.join(class_dir, image_name)
+        
+        num_superpixels = 100
+        target_superpixel = None
+        target_size = (512, 512)
+        
+        flag = False
+        while flag == False:
+
+            image, superpixel_mask = superpixel_segmentation(image_path, num_superpixels, target_superpixel)
+            resized_image, resized_mask = pad_and_resize(image, superpixel_mask, target_size)
+
+            mask_path = os.path.join(mask_dir, image_name)
+            save_path = os.path.join(save_dir, image_name)
+
+            width, height = resized_image.size
+            
+            init_image_array = np.array(resized_image)            
+            
+
+            result_images = inpaint(
+                sampler=sampler,
+                image=resized_image,
+                mask=resized_mask,
+                prompt=prompt,
+                seed=seed,
+                scale=scale,
+                ddim_steps=ddim_steps,
+                num_samples=num_samples,
+                h=height, w=width
+            )
+            result_image = result_images[0]
+            result_image_array = np.array(result_image)
+            flag = image_diference_check(init_image_array, result_image_array)
+            
+            if flag:
+                result_image.save(save_path)
+                resized_mask.save(mask_path)
+                print("difference check pass!")
+            # else:
+            #     print("difference check failed")
+        

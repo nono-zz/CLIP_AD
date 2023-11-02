@@ -7,7 +7,7 @@ from skimage.metrics import mean_squared_error
 
 def superpixel_segmentation(image_path, num_superpixels=100, mask_value=None):
     # Load the image
-    image = np.array(Image.open(image_path))
+    image = np.array(Image.open(image_path).convert('RGB'))
 
     # Apply superpixel segmentation using SLIC
     segments = slic(image, n_segments=num_superpixels, compactness=10)

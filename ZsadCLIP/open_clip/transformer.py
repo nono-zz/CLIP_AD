@@ -639,7 +639,7 @@ class VisionTransformer(nn.Module):
         if self.attn == None:
             
             # apply architecture surgery on the last 6 blocks
-            for i in range(4, 13): # surgery 7, maskclip 2
+            for i in range(1, 13): # surgery 7, maskclip 2
                 self.attn = Attention(self.embed_dim, self.embed_dim, self.num_heads, True)
                 self.attn.qkv.weight.data = self.transformer.resblocks[-i].attn.in_proj_weight.clone()
                 self.attn.qkv.bias.data = self.transformer.resblocks[-i].attn.in_proj_bias.clone()
@@ -647,13 +647,13 @@ class VisionTransformer(nn.Module):
                 self.attn.proj.bias.data = self.transformer.resblocks[-i].attn.out_proj.bias.clone()
                 self.transformer.resblocks[-i].attn = self.attn
             
-            for i in range(1, 4): # surgery 7, maskclip 2
-                self.attn = AttentionText(self.embed_dim, self.embed_dim, self.num_heads, True)
-                self.attn.qkv.weight.data = self.transformer.resblocks[-i].attn.in_proj_weight.clone()
-                self.attn.qkv.bias.data = self.transformer.resblocks[-i].attn.in_proj_bias.clone()
-                self.attn.proj.weight.data = self.transformer.resblocks[-i].attn.out_proj.weight.clone()
-                self.attn.proj.bias.data = self.transformer.resblocks[-i].attn.out_proj.bias.clone()
-                self.transformer.resblocks[-i].attn = self.attn
+            # for i in range(1, 4): # surgery 7, maskclip 2
+            #     self.attn = AttentionText(self.embed_dim, self.embed_dim, self.num_heads, True)
+            #     self.attn.qkv.weight.data = self.transformer.resblocks[-i].attn.in_proj_weight.clone()
+            #     self.attn.qkv.bias.data = self.transformer.resblocks[-i].attn.in_proj_bias.clone()
+            #     self.attn.proj.weight.data = self.transformer.resblocks[-i].attn.out_proj.weight.clone()
+            #     self.attn.proj.bias.data = self.transformer.resblocks[-i].attn.out_proj.bias.clone()
+            #     self.transformer.resblocks[-i].attn = self.attn
 
         # to patches - whether to use dual patchnorm - https://arxiv.org/abs/2302.01327v1
         if self.input_patchnorm:
